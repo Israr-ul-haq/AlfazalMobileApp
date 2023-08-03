@@ -1,8 +1,20 @@
 import React from "react";
 import { Text, StyleSheet, View, Image } from "react-native";
-// import CustomText from "../../CustomText";
+import CustomText from "../Helpers/CustomText";
+import Button from "../Helpers/Buttons";
+import { useNavigation } from "@react-navigation/native";
 
 function GettingStarted() {
+  const navigation = useNavigation();
+
+  const handleButtonPress = () => {
+    navigation.navigate("Login");
+  };
+
+  const redirect = () => {
+    navigation.navigate("SignUp");
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.imageWrapper}>
@@ -18,7 +30,21 @@ function GettingStarted() {
         source={require("../assets/logo.png")}
         resizeMode="contain"
       />
-      {/* <CustomText>New</CustomText> */}
+      <View style={styles.mainTextConatiner}>
+        <CustomText style={styles.mainText} bold={true}>
+          Grab Fast Your Sweet Snacks
+        </CustomText>
+      </View>
+
+      <View>
+        <Button
+          onPressOk={handleButtonPress}
+          onPressCancel={redirect}
+          title="Get Started"
+          title2="Create Account"
+          isMultiButton={true}
+        />
+      </View>
     </View>
   );
 }
@@ -55,6 +81,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignSelf: "center", // Align the logo horizontally to the center
     top: 360, // Adjust the top position to ensure the logo is visible
+  },
+  mainText: {
+    top: 50,
+    fontSize: 30,
+    lineHeight: 44,
+    textAlign: "center",
+  },
+  mainTextConatiner: {
+    width: 330,
+    flex: 1,
+    alignItems: "center",
+    textAlign: "center",
   },
 });
 

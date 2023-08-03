@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": ["INTERNET"]
     },
     "web": {
       "favicon": "./app/assets/favicon.png"
