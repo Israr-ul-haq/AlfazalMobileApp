@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState, useContext } from "react";
 import {
   View,
   StyleSheet,
@@ -22,11 +22,14 @@ import { useNavigation } from "@react-navigation/native";
 import PlaceHolder from "../assets/PlaceHolder.png";
 import { ScrollView } from "react-native-gesture-handler";
 import SkeletonPlaceholder from "../Helpers/SkeletonLoaders";
+import { baseURL } from "../Constants/axios.config";
+import AppContext from "../Helpers/UseContextStorage";
 
 function Home() {
   const [showDropdown, setShowDropdown] = useState(false);
+  const { user, data, setData } = useContext(AppContext);
   const rotationAngle = useState(new Animated.Value(0))[0];
-  const initialScrollPosition = useRef(0); // Ref to store initial scroll position
+  const initialScrollPosition = useRef(0);
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
@@ -50,14 +53,13 @@ function Home() {
     "Category 5",
   ];
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [data, setData] = useState([]);
-  const [loader, setLoader] = useState(false);
-  const [pageNumber, setPageNumber] = useState(1);
-  const navigation = useNavigation();
-  const scrollViewRef = useRef(null); // Reference to the ScrollView component
-  const [scrollOffset, setScrollOffset] = useState(0);
 
-  const scrollPosition = useRef(0);
+  const [loader, setLoader] = useState(false);
+  const [searchLoader, setSearchLoader] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [search, setSearch] = useState("");
+  const navigation = useNavigation();
+  const scrollViewRef = useRef(null);
   const handleScroll = (event) => {
     initialScrollPosition.current = event.nativeEvent.contentOffset.y;
   };
@@ -69,7 +71,6 @@ function Home() {
     });
   }, []); // Scroll to the initial position when the component mounts
 
-  const CardMemo = memo(CardTag);
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
   };
@@ -79,30 +80,29 @@ function Home() {
   }, []);
 
   const getData = async () => {
-    setLoader(true);
-
+    setSearchLoader(true);
     try {
-      const response = await get(pageNumber, 10, "");
+      const response = await get(pageNumber, 20, "", user._id);
       const newData = response.data.data;
-
-      setData((prevData) => [...prevData, ...newData]);
-      setLoader(false);
+      console.log(newData);
+      setData(newData);
+      setSearchLoader(false);
     } catch (error) {
       console.error("Error fetching data:", error);
-      setLoader(false);
+      setSearchLoader(false);
     }
   };
 
   const handleLoadMore = async (scrollPosition) => {
-    console.log(scrollPosition);
     setLoader(true);
-    setPageNumber((prevPageNumber) => prevPageNumber + 1); // Use functional form to update pageNumber
+    setPageNumber((prevPageNumber) => prevPageNumber + 1);
 
     try {
-      const response = await get(pageNumber + 1, 10, ""); // Use the updated pageNumber here
+      const response = await get(pageNumber + 1, 20, search);
       const newData = response.data.data;
 
       setData((prevData) => [...prevData, ...newData]);
+
       setLoader(false);
       scrollViewRef.current.scrollTo({ y: scrollPosition, animated: false });
     } catch (error) {
@@ -116,25 +116,34 @@ function Home() {
   };
 
   const searchInput = async (search) => {
-    const response = await get(1, 10, search);
+    setSearchLoader(true);
+    setSearch(search);
+    const response = await get(1, 10, search, user._id);
     setData(response.data.data);
+    setSearchLoader(false);
   };
+
+  const CardMemo = memo(CardTag);
 
   return (
     <ImageBackground
       style={styles.background}
       source={require("../assets/backgroundImage.png")}
     >
-      {/* <Header text="Home" /> */}
-
-      <View style={[styles.header_wrap]}>
+      {/* <View style={[styles.header_wrap]}>
         <CustomText style={styles.HeaderText} bold={true}>
           Home
         </CustomText>
         <TouchableOpacity onPress={navigateProfile}>
-          <Image source={PlaceHolder} style={styles.header_Image} />
+          <Image
+            source={{
+              uri: user?.img ? baseURL + user?.img : PlaceHolder,
+            }}
+            style={styles.header_Image}
+          />
         </TouchableOpacity>
-      </View>
+      </View> */}
+      <Header text={"Home"} />
 
       <View style={styles.main_contains}>
         <TouchableOpacity onPress={toggleDropdown}>
@@ -163,7 +172,7 @@ function Home() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            onChangeText={(e) => searchInput(e.target.value)}
+            onChangeText={searchInput}
             placeholder="Search"
             autoCapitalize="none"
             autoCorrect={false}
@@ -192,18 +201,28 @@ function Home() {
           onScroll={handleScroll}
         >
           <View style={styles.card_container}>
-            {data?.map((item, index) => {
-              return <CardMemo data={item} key={`card_${index}`} />;
-            })}
+            {searchLoader ? (
+              <SkeletonPlaceholder />
+            ) : (
+              data?.map((item, index) => {
+                return (
+                  <CardMemo
+                    data={item}
+                    key={`card_${index}`}
+                    setData={setData}
+                  />
+                );
+              })
+            )}
           </View>
           {loader &&
-            data.length > 0 && ( // Show loader only when data is populated
+            data?.length > 0 && ( // Show loader only when data is populated
               <View style={styles.load_contains}>
                 <ActivityIndicator size="large" color="red" />
               </View>
             )}
 
-          {data.length !== 0 && !loader && (
+          {data?.length !== 0 && !loader && (
             <View style={styles.load_contains}>
               <TouchableOpacity
                 style={styles.load_section}
@@ -405,6 +424,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     paddingHorizontal: 20,
+    paddingVertical: 20,
   },
 });
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { BottomFabBar } from "rn-wave-bottom-bar";
 import Home from "../screens/Home";
@@ -7,10 +7,41 @@ import { HomeSvg, OrdersSvg, ShoppingCartSvg, UserSvg } from "./SVGs";
 import Cart from "../screens/Cart";
 import History from "../screens/History";
 import Profile from "../screens/Profile";
+import AppContext from "./UseContextStorage";
+import { Text, View } from "react-native";
 
 const Tab = createBottomTabNavigator();
 
 const BottomBarMenu = () => {
+  const { cartCount } = useContext(AppContext);
+
+  const CartIconWithBadge = ({ cartCount }) => {
+    return (
+      <View>
+        <ShoppingCartSvg width={24} height={24} color="black" />
+        {cartCount > 0 && (
+          <View
+            style={{
+              position: "absolute",
+              top: -5,
+              right: -10,
+              backgroundColor: "red",
+              borderRadius: 10,
+              width: 20,
+              height: 20,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "bold" }}>
+              {cartCount}
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -55,7 +86,9 @@ const BottomBarMenu = () => {
         name="Cart"
         component={Cart}
         options={{
-          tabBarIcon: () => <ShoppingCartSvg />,
+          tabBarIcon: ({ color, size }) => (
+            <CartIconWithBadge cartCount={cartCount} />
+          ),
           header: () => null,
         }}
       />

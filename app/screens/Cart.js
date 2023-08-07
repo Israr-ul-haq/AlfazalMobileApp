@@ -1,28 +1,45 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Header from "../Helpers/Header";
 import { ImageBackground, StyleSheet, View, ScrollView } from "react-native";
 import CartCard from "../Helpers/CartCard";
-
 import SubTotalCard from "../Helpers/SubTotalCard";
+import { getCartItems } from "../Services/CartService";
+import AppContext from "../Helpers/UseContextStorage";
+import { useFocusEffect } from "@react-navigation/native";
+import CartSkeletonPlaceholder from "../Helpers/CartSekeletonPlaceHolder";
 
 function Cart() {
-  const [cartData, setCartData] = useState([
-    {
-      name: "Strawberry Donut",
-      description: "Lorem Ipsum is simply",
-      price: "1250",
-    },
-    {
-      name: "Strawberry Donut",
-      description: "Lorem Ipsum is simply",
-      price: "1250",
-    },
-    {
-      name: "Strawberry Donut",
-      description: "Lorem Ipsum is simply",
-      price: "1250",
-    },
-  ]);
+  const { user, cartData, setCartData, setCartCount } = useContext(AppContext);
+  const [grandTotal, setGrandTotal] = useState(0);
+  const [loader, setLoader] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      getData();
+    }, [])
+  );
+
+  useEffect(() => {
+    // Calculate and set the grand total whenever cartData changes
+    const total = cartData.reduce(
+      (accumulator, item) => accumulator + item.item.SalePrice * item.count,
+      0
+    );
+    setGrandTotal(total);
+  }, [cartData]);
+
+  const getData = async () => {
+    try {
+      setLoader(true);
+      const response = await getCartItems(user._id);
+      const newData = response.data.cartItems;
+      setCartData(newData);
+      setLoader(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoader(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -33,11 +50,24 @@ function Cart() {
       <ScrollView style={styles.scrollView} scrollEventThrottle={16}>
         <View style={styles.pb150}>
           <View style={styles.cartContains}>
-            {cartData?.map((i, index) => {
-              return <CartCard data={i} key={index} />;
-            })}
+            {loader ? (
+              <CartSkeletonPlaceholder />
+            ) : (
+              cartData?.map((i, index) => {
+                return (
+                  <CartCard
+                    data={i}
+                    key={`cart_${index}`}
+                    setCartData={setCartData}
+                    cartData={cartData}
+                    userId={user._id}
+                    setCartCount={setCartCount}
+                  />
+                );
+              })
+            )}
           </View>
-          <SubTotalCard pageNavigate={"Payment"} />
+          <SubTotalCard pageNavigate={"Payment"} grandTotal={grandTotal} />
         </View>
       </ScrollView>
     </ImageBackground>

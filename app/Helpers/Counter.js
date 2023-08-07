@@ -3,9 +3,7 @@ import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Postive_Image } from "./SVGs";
 import CustomText from "./CustomText";
 
-function Counter() {
-  const [count, setCount] = useState(1);
-
+function Counter({ count, setCount }) {
   const incrementCounter = () => {
     setCount(count + 1);
   };

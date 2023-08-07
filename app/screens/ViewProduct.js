@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { View } from "react-native";
 import Header from "../Helpers/Header";
 import {
@@ -13,8 +13,68 @@ import CustomText from "../Helpers/CustomText";
 import { Rating } from "react-native-ratings";
 import Button from "../Helpers/Buttons";
 import Counter from "../Helpers/Counter";
+import { useRoute } from "@react-navigation/native";
+import { getById } from "../Services/ProdunctsService";
+import { AddCart } from "../Services/CartService";
+import AppContext from "../Helpers/UseContextStorage";
 
 function ViewProduct() {
+  const route = useRoute();
+  const { data } = route.params;
+
+  const [count, setCount] = useState(1);
+
+  const { setData, user, setCartCount } = useContext(AppContext);
+
+  useEffect(() => {
+    setCount(data.count === 0 ? 1 : data.count);
+  }, []);
+
+  const addTocart = async (status) => {
+    const newStatus = !status; // Toggle the cart status
+    let newCount;
+    data.isCartAdded = newStatus;
+
+    if (newStatus) {
+      newCount = count;
+
+      setCartCount((prevCartCount) => prevCartCount + 1);
+    } else {
+      newCount = 0;
+      setCartCount((prevCartCount) => prevCartCount - 1);
+    }
+
+    setData((prevData) => {
+      const updatedData = prevData.map((item) => {
+        if (item._id === data?._id) {
+          return {
+            ...item,
+            isCartAdded: newStatus,
+            count: newCount,
+          };
+        }
+        return item;
+      });
+
+      return updatedData;
+    });
+
+    const payload = {
+      userId: user._id,
+      itemId: data?._id,
+      count: newCount,
+    };
+
+    try {
+      const res = await AddCart(payload); // Replace "upload" with your API call to upload the image
+      if (res && res.status === 200) {
+      } else {
+        console.log("Error", res);
+      }
+    } catch (err) {
+      console.log("Error: ", err);
+    }
+  };
   return (
     <ImageBackground
       style={styles.background}
@@ -35,7 +95,7 @@ function ViewProduct() {
           >
             <View style={styles.product_details_contains}>
               <CustomText bold={true} style={styles.product_title}>
-                Mix Cake slices
+                {data?.Name}
               </CustomText>
             </View>
           </ImageBackground>
@@ -44,7 +104,8 @@ function ViewProduct() {
           <View style={styles.flex_contains}>
             <View>
               <CustomText style={styles.product_weight} bold={false}>
-                Rs: 1259/kg
+                Rs: {data?.SalePrice}/
+                {data?.ProductType === "Piece" ? "Pcs" : "kg"}
               </CustomText>
               <Rating
                 readonly // Disables the rating change
@@ -56,14 +117,11 @@ function ViewProduct() {
               />
             </View>
 
-            <Counter />
+            <Counter setCount={setCount} count={count} />
           </View>
           <View style={styles.description_contains}>
             <CustomText bold={false}>Description</CustomText>
-            <CustomText style={styles.para}>
-              Lorem Ipsum is simply dummy text of the printing and typesetting
-              industry.{" "}
-            </CustomText>
+            <CustomText style={styles.para}>{data?.description}</CustomText>
           </View>
           <View style={styles.description_contains}>
             <CustomText bold={false}>Instructions</CustomText>
@@ -79,8 +137,8 @@ function ViewProduct() {
           </View>
           <View style={styles.cart_button}>
             <Button
-              // onPressOk={handleLogin}
-              title="Add to Cart"
+              onPressOk={() => addTocart(data?.isCartAdded)}
+              title={data?.isCartAdded ? "Remove" : "Add To Cart"}
               isButtonFirst={true}
             />
           </View>
@@ -111,7 +169,6 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "absolute",
     bottom: 0,
-    height: 80,
     left: 0,
     right: 0,
     backgroundColor: "white",

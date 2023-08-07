@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useContext } from "react";
 import {
   Alert,
   Image,
@@ -21,29 +21,20 @@ import { Platform } from "react-native";
 import Header from "../Helpers/Header";
 import PlaceHolder from "../assets/PlaceHolder.png";
 import { Camera } from "../Helpers/SVGs";
+import AppContext from "../Helpers/UseContextStorage";
+import { baseURL } from "../Constants/axios.config";
+import { deleteImage, update, upload } from "../Services/AuthService";
+import AsyncService from "../Services/AsyncStorage";
 
 function EditProfile() {
+  const { user, setUser } = useContext(AppContext);
+
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
+  const [loader, setLoader] = useState(false);
 
-  const inputRefs = {
-    email: useRef(null),
-    password: useRef(null),
-    fullName: useRef(null),
-    confirmPassword: useRef(null),
-    location: useRef(null),
-    phoneNumber: useRef(null),
-    gender: useRef(null),
-  };
-
-  const scrollToField = (refName) => {
-    const ref = inputRefs[refName]?.current;
-    if (ref) {
-      ref.focus();
-      scrollViewRef.current?.scrollToPosition(0, ref.offsetTop - 100);
-    }
-  };
-  const [image, setImage] = useState(null);
+  const [file, setFile] = useState("");
+  const [imageUrl, setImageUrl] = useState(baseURL + user?.img);
 
   // Function to handle image upload
   const handleImageUpload = async () => {
@@ -60,186 +51,117 @@ function EditProfile() {
       pickerResult = await ImagePicker.launchImageLibraryAsync();
     } else {
       pickerResult = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, // Make sure the options are defined correctly
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,
       });
     }
 
-    if (!pickerResult.canceled) {
-      setImage(pickerResult.assets[0].uri);
+    if (!pickerResult.cancelled) {
+      const selectedImage = pickerResult.assets[0]; // @ts-ignore
+      setFile(selectedImage.uri);
+      setImageUrl(selectedImage.uri);
+    }
+  };
+
+  const inputRefs = {
+    email: useRef(null),
+
+    name: useRef(null),
+
+    address: useRef(null),
+    phoneNumber: useRef(null),
+    gender: useRef(null),
+  };
+
+  const scrollToField = (refName) => {
+    const ref = inputRefs[refName]?.current;
+    if (ref) {
+      ref.focus();
+      scrollViewRef.current?.scrollToPosition(0, ref.offsetTop - 100);
     }
   };
 
   const [credentials, setCredentials] = useState({
-    email: "",
-    password: "",
-    fullName: "",
-    confirmPassword: "",
-    location: "",
-    phoneNumber: "",
-    gender: "",
+    email: user?.email,
+    name: user?.name,
+    address: user?.address,
+    phoneNumber: user?.phoneNumber,
+    gender: user?.gender,
+    img: "",
+    lat: "",
+    lng: "",
+    updatedBy: "",
   });
   const [errors, setErrors] = useState({
     email: "",
-    password: "",
-    fullName: "",
-    confirmPassword: "",
-    location: "",
+    message: "",
+    name: "",
+
+    address: "",
     phoneNumber: "",
     gender: "",
   });
 
   const handleInputChange = (field, value) => {
-    console.log(field, value);
     setCredentials({ ...credentials, [field]: value });
     setErrors({ ...errors, [field]: "" }); // Clear the error message for the field
   };
 
-  const handleSubmit = () => {
-    const {
-      email,
-      password,
-      fullName,
-      confirmPassword,
-      location,
-      phoneNumbers,
-      gender,
-    } = credentials;
-
-    if (validateInputs()) {
-      if (email === "example@example.com" && password === "password") {
-        Alert.alert("Login Successful");
-      } else {
-        Alert.alert("Invalid credentials");
-      }
-    }
-  };
-
   const validateInputs = () => {
-    const {
-      email,
-      password,
-      fullName,
-      confirmPassword,
-      location,
-      phoneNumber,
-      gender,
-    } = credentials;
+    const { name, address, phoneNumber } = credentials;
     let isValid = true;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!fullName.trim()) {
+    // Validate name
+    if (!name || !name.trim()) {
       setErrors((prevErrors) => ({
         ...prevErrors,
-        fullName: "Name is required",
+        name: "Name is required",
       }));
       isValid = false;
-      scrollToField("fullName");
+      scrollToField("name");
     } else {
       setErrors((prevErrors) => ({
         ...prevErrors,
-        fullName: "", // Clear the email error message
+        name: "", // Clear the name error message
       }));
     }
 
-    // Validate email
-    if (!email.trim()) {
+    // Validate address
+    if (!address || !address.trim()) {
       setErrors((prevErrors) => ({
         ...prevErrors,
-        email: "Email is required",
+        address: "Address is required",
       }));
       isValid = false;
-
-      // Scroll to the email input field
-      scrollToField("email");
-    } else if (!emailRegex.test(email)) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        email: "Invalid email format",
-      }));
-      isValid = false;
-
-      // Scroll to the email input field
-      scrollToField("email");
+      scrollToField("address");
     } else {
       setErrors((prevErrors) => ({
         ...prevErrors,
-        email: "", // Clear the email error message
+        address: "", // Clear the address error message
       }));
     }
 
-    // Validate password
-    if (!password.trim()) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        password: "Password is required",
-      }));
-      isValid = false;
-      scrollToField("password");
-      // Scroll to the password input field
-    } else if (password.length < 6) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        password: "Password should be at least 6 characters",
-      }));
-      isValid = false;
-      scrollToField("password");
-      // Scroll to the password input field
-    } else {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        password: "", // Clear the password error message
-      }));
-    }
-
-    // Validate confirm password
-    if (!confirmPassword.trim()) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        confirmPassword: "Confirm password is required",
-      }));
-      scrollToField("confirmPassword");
-      return;
-    } else if (password !== confirmPassword) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        confirmPassword: "Passwords do not match", // Clear the confirm password error message
-      }));
-      scrollToField("confirmPassword");
-    } else {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        confirmPassword: "", // Clear the password error message
-      }));
-    }
-
-    if (!location.trim()) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        location: "Location is required",
-      }));
-      isValid = false;
-      scrollToField("location");
-    } else {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        location: "", // Clear the email error message
-      }));
-    }
-
-    if (!phoneNumber.trim()) {
+    // Validate phone number
+    if (!phoneNumber || !phoneNumber.trim()) {
       setErrors((prevErrors) => ({
         ...prevErrors,
         phoneNumber: "Phone number is required",
       }));
       scrollToField("phoneNumber");
       return;
-    } else if (phoneNumber.trim().length !== 11) {
+    } else if (!phoneNumber.trim().startsWith("+92")) {
       setErrors((prevErrors) => ({
         ...prevErrors,
-        phoneNumber: "Phone number should be 11 digits",
+        phoneNumber: "Phone number should start with +92",
+      }));
+      scrollToField("phoneNumber");
+      return;
+    } else if (phoneNumber.trim().length !== 13) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        phoneNumber: "Phone number should be 12 digits",
       }));
       scrollToField("phoneNumber");
       return;
@@ -253,8 +175,68 @@ function EditProfile() {
     return isValid;
   };
 
-  const redirect = () => {
-    navigation.navigate("SignUp");
+  const handleSubmit = async () => {
+    if (validateInputs()) {
+      setLoader(true);
+      if (file !== "") {
+        const fmData = new FormData();
+        fmData.append("image", {
+          uri: file,
+          type: "image/jpeg", // Modify the type accordingly if the image is in a different format
+          name: "image.jpg", // Modify the name accordingly
+        });
+
+        try {
+          const res = await upload(fmData); // Replace "upload" with your API call to upload the image
+          if (res && res.status === 200) {
+            console.log("updateImage");
+            setImageUrl(res.data.url);
+            credentials.img = res.data.url;
+            const resDelete = await deleteImage({
+              img: user?.img,
+            });
+          } else {
+            console.log("Error uploading image.", res);
+          }
+        } catch (err) {
+          console.log("Error: ", err);
+        }
+      } else {
+        credentials.img = user?.img;
+      }
+
+      credentials.lat = "5632362625";
+      credentials.lng = "541655415";
+      credentials.updatedBy = user?._id;
+
+      const res = await update(user._id, credentials);
+      // console.log(res, "response");
+      if (res.status === 200) {
+        // console.log(res);
+
+        console.log("data updated");
+        await AsyncService.updateUser({
+          name: credentials.name,
+          address: credentials.address,
+          phoneNumber: credentials.phoneNumber,
+          gender: credentials.gender,
+          img: credentials.img,
+        });
+
+        const updatedUser = {
+          ...user, // Keep existing user data
+          name: credentials.name,
+          address: credentials.address,
+          phoneNumber: credentials.phoneNumber,
+          gender: credentials.gender,
+          email: credentials.email,
+          img: credentials.img,
+        };
+        setUser(updatedUser);
+        setLoader(false);
+        navigation.navigate("Profile");
+      }
+    }
   };
 
   return (
@@ -270,18 +252,17 @@ function EditProfile() {
           extraScrollHeight={100}
         >
           <View style={styles.inputContainer}>
-            {image ? (
-              <View style={styles.imageContains}>
-                <Image source={{ uri: image }} style={styles.previewImage} />
-              </View>
-            ) : (
+            {imageUrl && (
               <TouchableOpacity
                 style={styles.uploadButton}
                 onPress={handleImageUpload}
               >
                 <View style={styles.imageContains}>
                   <View style={styles.camere_contain}>
-                    <Image source={PlaceHolder} style={styles.previewImage} />
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={styles.previewImage}
+                    />
                     <View style={styles.camera}>
                       <Camera />
                     </View>
@@ -295,17 +276,17 @@ function EditProfile() {
               Full Name
             </CustomText>
             <TextInput
-              ref={inputRefs.fullName}
-              style={[styles.input, !!errors.fullName && styles.inputError]} // Apply error styles if there is an error
-              onChangeText={(text) => handleInputChange("fullName", text)}
-              value={credentials.fullName}
+              ref={inputRefs.name}
+              style={[styles.input, !!errors.name && styles.inputError]} // Apply error styles if there is an error
+              onChangeText={(text) => handleInputChange("name", text)}
+              value={credentials.name}
               placeholder="Enter name"
               autoCapitalize="none"
               autoCorrect={false}
             />
-            {!!errors.fullName && (
+            {!!errors.name && (
               <CustomText style={styles.errorText} bold={false}>
-                {errors.fullName}
+                {errors.name}
               </CustomText>
             )}
           </View>
@@ -322,6 +303,7 @@ function EditProfile() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              editable={false}
             />
             {!!errors.email && (
               <CustomText style={styles.errorText} bold={false}>
@@ -334,17 +316,17 @@ function EditProfile() {
               Location
             </CustomText>
             <TextInput
-              ref={inputRefs.location}
-              style={[styles.input, !!errors.location && styles.inputError]} // Apply error styles if there is an error
-              onChangeText={(text) => handleInputChange("location", text)}
-              value={credentials.location}
+              ref={inputRefs.address}
+              style={[styles.input, !!errors.address && styles.inputError]} // Apply error styles if there is an error
+              onChangeText={(text) => handleInputChange("address", text)}
+              value={credentials.address}
               placeholder="Enter location"
               autoCapitalize="none"
               autoCorrect={false}
             />
-            {!!errors.location && (
+            {!!errors.address && (
               <CustomText style={styles.errorText} bold={false}>
-                {errors.location}
+                {errors.address}
               </CustomText>
             )}
           </View>
@@ -361,7 +343,7 @@ function EditProfile() {
               keyboardType="phone-pad"
               autoCapitalize="none"
               autoCorrect={false}
-              maxLength={11} // Limit the number of characters to 11
+              maxLength={13} // Limit the number of characters to 11
             />
             {!!errors.phoneNumber && (
               <CustomText style={styles.errorText} bold={false}>
@@ -395,10 +377,16 @@ function EditProfile() {
           </View>
 
           <View style={styles.signUpButton}>
+            {!!errors.message && (
+              <CustomText style={styles.resErrortext} bold={false}>
+                {errors.message}
+              </CustomText>
+            )}
             <Button
               onPressOk={handleSubmit}
-              title="Save"
+              title="Update"
               isButtonFirst={true}
+              isLoading={loader}
             />
           </View>
         </KeyboardAwareScrollView>
@@ -410,6 +398,13 @@ function EditProfile() {
 const styles = StyleSheet.create({
   background: {
     justifyContent: "flex-start",
+  },
+
+  resErrortext: {
+    color: "red",
+    marginBottom: 8,
+    fontSize: 10,
+    textAlign: "center",
   },
 
   camera: {
@@ -439,6 +434,7 @@ const styles = StyleSheet.create({
   },
   signUpButton: {
     paddingTop: 50,
+    paddingBottom: 110,
   },
   mainText: {
     fontSize: 33,

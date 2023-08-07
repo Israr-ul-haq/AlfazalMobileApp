@@ -3,7 +3,7 @@ import { TouchableOpacity, View, StyleSheet, Animated } from "react-native";
 import { ArrowMenu } from "./SVGs";
 import CustomText from "./CustomText";
 
-function CustomDropdown({ data, key }) {
+function CustomDropdown({ data }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const rotationAngle = useState(new Animated.Value(0))[0];
 
@@ -22,11 +22,7 @@ function CustomDropdown({ data, key }) {
   });
   return (
     <>
-      <TouchableOpacity
-        style={styles.text_contain}
-        onPress={toggleDropdown}
-        id={key}
-      >
+      <TouchableOpacity style={styles.text_contain} onPress={toggleDropdown}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {data.icon}
           <CustomText style={styles.text} bold={false}>

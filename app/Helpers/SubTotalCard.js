@@ -4,7 +4,7 @@ import CustomText from "./CustomText";
 import Button from "./Buttons";
 import { useNavigation } from "@react-navigation/native";
 
-function SubTotalCard({ pageNavigate }) {
+function SubTotalCard({ pageNavigate, grandTotal }) {
   const navigation = useNavigation();
   const redirect = () => {
     navigation.navigate(pageNavigate);
@@ -15,7 +15,7 @@ function SubTotalCard({ pageNavigate }) {
       <View style={styles.border_line}></View>
       <View style={[styles.pt30, styles.total_text]}>
         <CustomText bold={true}>Sub Total</CustomText>
-        <CustomText bold={true}>Rs: 3567</CustomText>
+        <CustomText bold={true}>Rs: {grandTotal}</CustomText>
       </View>
       <View style={[styles.pt20, styles.total_text]}>
         <CustomText bold={false} style={styles.font14}>
@@ -28,8 +28,8 @@ function SubTotalCard({ pageNavigate }) {
       <View style={styles.border}></View>
 
       <View style={[styles.pt30, styles.total_text]}>
-        <CustomText bold={true}>Sub Total</CustomText>
-        <CustomText bold={true}>Rs: 3567</CustomText>
+        <CustomText bold={true}>Grand Total</CustomText>
+        <CustomText bold={true}>Rs: {grandTotal}</CustomText>
       </View>
       <View style={styles.pt30}>
         <Button onPressOk={redirect} title="Pay Now" isButtonFirst={true} />

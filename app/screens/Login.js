@@ -14,6 +14,7 @@ import Button from "../Helpers/Buttons";
 import { useNavigation } from "@react-navigation/native";
 import { userLogin } from "../Services/AuthService";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncService from "../Services/AsyncStorage";
 
 function Login() {
   const navigation = useNavigation();
@@ -34,23 +35,22 @@ function Login() {
   };
 
   const handleLogin = async () => {
-    // if (validateInputs()) {
-    //   setLoader(true);
-    //   const response = await userLogin(credentials);
-    //   console.log(response);
-    //   if (response.status === 200) {
-    //     setLoader(false);
-    //     navigation.navigate("Main");
-    //   } else {
-    //     setLoader(false);
-    //     setErrors((prevErrors) => ({
-    //       ...prevErrors,
-    //       message: response.data.message,
-    //     }));
-    //   }
-    // }
-
-    navigation.navigate("Main");
+    if (validateInputs()) {
+      setLoader(true);
+      const response = await userLogin(credentials);
+      console.log(response.data.user);
+      if (response.status === 200) {
+        await AsyncService.login(response.data.user);
+        setLoader(false);
+        navigation.navigate("Main");
+      } else {
+        setLoader(false);
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          message: response.data.message,
+        }));
+      }
+    }
   };
 
   const validateInputs = () => {

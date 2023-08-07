@@ -1,12 +1,18 @@
-import React from "react";
+import React, { useContext, useEffect } from "react";
 import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
 import CustomText from "./CustomText";
 import PlaceHolder from "../assets/PlaceHolder.png";
 import { Arrow } from "./SVGs";
 import { useNavigation } from "@react-navigation/native";
 
+import AppContext from "./UseContextStorage";
+import { baseURL } from "../Constants/axios.config";
+import { getCartItems } from "../Services/CartService";
+
 function Header({ text, isBack, navigateUrl }) {
   const navigation = useNavigation();
+
+  const { user, setCartCount } = useContext(AppContext);
 
   const navigateBack = () => {
     navigation.navigate(navigateUrl);
@@ -14,6 +20,22 @@ function Header({ text, isBack, navigateUrl }) {
 
   const navigateProfile = () => {
     navigation.navigate("Profile");
+  };
+
+  /// Cart Data
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const getData = async () => {
+    try {
+      const response = await getCartItems(user._id);
+      const newData = response.data.totalCount;
+      setCartCount(newData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
   };
 
   return (
@@ -29,7 +51,12 @@ function Header({ text, isBack, navigateUrl }) {
         {text}
       </CustomText>
       <TouchableOpacity onPress={navigateProfile}>
-        <Image source={PlaceHolder} style={styles.header_Image} />
+        <Image
+          source={{
+            uri: user?.img ? baseURL + user?.img : PlaceHolder,
+          }}
+          style={styles.header_Image}
+        />
       </TouchableOpacity>
     </View>
   );

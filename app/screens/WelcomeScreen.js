@@ -1,16 +1,29 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import { Image, ImageBackground, StyleSheet, View } from "react-native";
+import AsyncService from "../Services/AsyncStorage";
+import AppContext from "../Helpers/UseContextStorage";
 
 function WelcomeScreen() {
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.navigate("GettingStarted");
-    }, 3000);
+  const { setIsWelcomeScreen } = useContext(AppContext);
 
-    return () => clearTimeout(timer);
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const loggedIn = await AsyncService.isLoggedIn();
+
+      setTimeout(() => {
+        if (loggedIn) {
+          navigation.navigate("Main");
+        } else {
+          navigation.navigate("GettingStarted");
+        }
+        setIsWelcomeScreen(true);
+      }, 3000);
+    };
+
+    checkLoginStatus();
   }, [navigation]);
 
   return (

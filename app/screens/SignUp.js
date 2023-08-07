@@ -528,7 +528,7 @@ function SignUp() {
             )}
             <Button
               onPressOk={handleSubmit}
-              title="SignUp"
+              title="Update"
               isButtonFirst={true}
               isLoading={loader}
             />

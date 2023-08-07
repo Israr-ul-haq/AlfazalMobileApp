@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   ImageBackground,
   View,
@@ -14,27 +14,35 @@ import { Edit, LocationMap, Mail, Person } from "../Helpers/SVGs";
 import CustomText from "../Helpers/CustomText";
 import CustomDropdown from "../Helpers/CustomDropdown";
 import { useNavigation } from "@react-navigation/native";
+import AppContext from "../Helpers/UseContextStorage";
+import { baseURL } from "../Constants/axios.config";
+import { deleteImage, upload } from "../Services/AuthService";
+import * as ImagePicker from "expo-image-picker";
+
 function Profile() {
   const navigation = useNavigation();
+
+  const { user } = useContext(AppContext);
+
   const dropdowns = [
     {
       label: "User name",
-      options: "stephen Charles",
+      options: user?.name,
       icon: <Person />,
     },
     {
       label: "Email",
-      options: "test@gmail.com",
+      options: user?.email,
       icon: <Mail />,
     },
     {
       label: "Gender",
-      options: "Male",
+      options: user?.gender,
       icon: <Person />,
     },
     {
       label: "Location",
-      options: "Address",
+      options: user?.address,
       icon: <LocationMap />,
     },
   ];
@@ -50,28 +58,33 @@ function Profile() {
     >
       <Header isBack={false} text={"My Profile"} />
       <ScrollView style={styles.scrollView} scrollEventThrottle={16}>
+        <TouchableOpacity style={styles.button} onPress={navigateUrl}>
+          <View style={styles.edit_contains}>
+            <Edit />
+          </View>
+        </TouchableOpacity>
         <View style={styles.container}>
           <View style={styles.flex_row}>
             <View style={styles.imageContains}>
-              <Image source={PlaceHolder} style={styles.previewImage} />
-              <TouchableOpacity style={styles.button} onPress={navigateUrl}>
-                <View style={styles.edit_contains}>
-                  <Edit />
-                </View>
-              </TouchableOpacity>
+              <Image
+                source={{
+                  uri: user?.img ? baseURL + user?.img : PlaceHolder,
+                }}
+                style={styles.previewImage}
+              />
             </View>
             <View style={styles.textContains}>
               <CustomText style={styles.text_size} bold={true}>
-                StephenCharles
+                {user?.name}
               </CustomText>
               <CustomText style={styles.text_size} bold={false}>
-                stephen541@gmail.com
+                {user?.email}
               </CustomText>
             </View>
           </View>
 
           {dropdowns?.map((i, index) => {
-            return <CustomDropdown data={i} key={index} />;
+            return <CustomDropdown data={i} key={`dropdown_${index}`} />;
           })}
         </View>
       </ScrollView>
@@ -102,8 +115,8 @@ const styles = StyleSheet.create({
   },
 
   textContains: {
-    width: "70%",
-    alignItems: "center",
+    width: "60%",
+    marginLeft: 40,
     justifyContent: "center",
   },
   flex_row: {
@@ -112,8 +125,9 @@ const styles = StyleSheet.create({
 
   button: {
     position: "absolute",
-    right: 0,
-    bottom: 20,
+    right: 20,
+    bottom: 0,
+    top: 10,
   },
 
   background: {
