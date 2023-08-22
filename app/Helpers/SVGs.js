@@ -258,8 +258,8 @@ export const JazzCard = function () {
 export const Location = function () {
   return (
     <Svg
-      width="12"
-      height="16"
+      width="30"
+      height="30"
       viewBox="0 0 12 16"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

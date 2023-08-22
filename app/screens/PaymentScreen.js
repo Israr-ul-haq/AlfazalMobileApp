@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -13,8 +13,11 @@ import CustomText from "../Helpers/CustomText";
 import MapImage from "../assets/Map.png";
 import PaymentCardOptions from "../Helpers/PaymentCardOptions";
 import SubTotalCard from "../Helpers/SubTotalCard";
+import AppContext from "../Helpers/UseContextStorage";
 
 function PaymentScreen() {
+  const { grandTotal } = useContext(AppContext);
+
   return (
     <ImageBackground
       style={styles.background}
@@ -47,7 +50,7 @@ function PaymentScreen() {
           </View>
           <PaymentCardOptions />
         </View>
-        <SubTotalCard pageNavigate={"Order"} />
+        <SubTotalCard pageNavigate={"Order"} grandTotal={grandTotal} />
       </ScrollView>
     </ImageBackground>
   );

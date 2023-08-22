@@ -28,6 +28,7 @@ const AsyncService = {
   },
 
   async updateUser(newUserData) {
+    console.log("updateUser", newUserData);
     try {
       const userJson = await AsyncStorage.getItem("user");
       const currentUser = JSON.parse(userJson);

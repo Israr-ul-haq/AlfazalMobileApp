@@ -54,6 +54,17 @@ export const update = async (id, body) => {
   }
 };
 
+export const updateAddressStatus = async (userId, addressId, isSelected) => {
+  try {
+    const response = await axios.put(
+      `/update/user/status?userId=${userId}&addressId=${addressId}&isSelected=${isSelected}`
+    );
+    return response;
+  } catch (error) {
+    return error.response;
+  }
+};
+
 export const forgotPassword = async (body) => {
   try {
     const response = await axios.post(`/sendOtp`, body);

@@ -18,11 +18,12 @@ import AppContext from "../Helpers/UseContextStorage";
 import { baseURL } from "../Constants/axios.config";
 import { deleteImage, upload } from "../Services/AuthService";
 import * as ImagePicker from "expo-image-picker";
+import AsyncService from "../Services/AsyncStorage";
 
 function Profile() {
   const navigation = useNavigation();
 
-  const { user } = useContext(AppContext);
+  const { user, setIsLoggedIn, setUser } = useContext(AppContext);
 
   const dropdowns = [
     {
@@ -51,6 +52,24 @@ function Profile() {
     navigation.navigate("EditProfile");
   };
 
+  const logout = () => {
+    setIsLoggedIn(false);
+    AsyncService.logout();
+    checkLoginStatus(navigation);
+  };
+
+  const checkLoginStatus = async (navigation) => {
+    const loggedIn = await AsyncService.isLoggedIn();
+    setIsLoggedIn(loggedIn);
+
+    if (loggedIn) {
+      const fetchedUser = await AsyncService.getUser();
+      setUser(fetchedUser);
+    } else {
+      navigation.navigate("Login"); // Navigate to Login screen if not logged in
+    }
+  };
+
   return (
     <ImageBackground
       style={styles.background}
@@ -68,7 +87,7 @@ function Profile() {
             <View style={styles.imageContains}>
               <Image
                 source={{
-                  uri: user?.img ? baseURL + user?.img : PlaceHolder,
+                  uri: user && user?.img ? baseURL + user?.img : PlaceHolder,
                 }}
                 style={styles.previewImage}
               />
@@ -86,6 +105,12 @@ function Profile() {
           {dropdowns?.map((i, index) => {
             return <CustomDropdown data={i} key={`dropdown_${index}`} />;
           })}
+
+          <TouchableOpacity style={styles.log_contains} onPress={logout}>
+            <CustomText style={styles.logout_contains} bold={true}>
+              Logout
+            </CustomText>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </ImageBackground>
@@ -128,6 +153,20 @@ const styles = StyleSheet.create({
     right: 20,
     bottom: 0,
     top: 10,
+  },
+
+  logout_contains: {
+    padding: 5,
+    backgroundColor: "#FED7D7",
+    borderRadius: 5,
+    width: 100,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  log_contains: {
+    width: "100%",
+    alignItems: "center",
+    paddingTop: 50,
   },
 
   background: {

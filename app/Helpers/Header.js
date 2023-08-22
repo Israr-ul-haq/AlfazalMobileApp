@@ -30,7 +30,7 @@ function Header({ text, isBack, navigateUrl }) {
 
   const getData = async () => {
     try {
-      const response = await getCartItems(user._id);
+      const response = await getCartItems(user && user?._id);
       const newData = response.data.totalCount;
       setCartCount(newData);
     } catch (error) {
@@ -53,7 +53,7 @@ function Header({ text, isBack, navigateUrl }) {
       <TouchableOpacity onPress={navigateProfile}>
         <Image
           source={{
-            uri: user?.img ? baseURL + user?.img : PlaceHolder,
+            uri: user && user?.img ? baseURL + user?.img : PlaceHolder,
           }}
           style={styles.header_Image}
         />

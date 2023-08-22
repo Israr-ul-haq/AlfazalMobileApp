@@ -1,6 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import Header from "../Helpers/Header";
-import { ImageBackground, StyleSheet, View, ScrollView } from "react-native";
+import {
+  ImageBackground,
+  StyleSheet,
+  View,
+  ScrollView,
+  Text,
+} from "react-native";
 import CartCard from "../Helpers/CartCard";
 import SubTotalCard from "../Helpers/SubTotalCard";
 import { getCartItems } from "../Services/CartService";
@@ -9,9 +15,19 @@ import { useFocusEffect } from "@react-navigation/native";
 import CartSkeletonPlaceholder from "../Helpers/CartSekeletonPlaceHolder";
 
 function Cart() {
-  const { user, cartData, setCartData, setCartCount } = useContext(AppContext);
-  const [grandTotal, setGrandTotal] = useState(0);
+  const {
+    user,
+    cartData,
+    setCartData,
+    setCartCount,
+    setData,
+    grandTotal,
+    setGrandTotal,
+  } = useContext(AppContext);
+
   const [loader, setLoader] = useState(false);
+
+  const [error, setError] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -31,9 +47,12 @@ function Cart() {
   const getData = async () => {
     try {
       setLoader(true);
-      const response = await getCartItems(user._id);
+      const response = await getCartItems(user && user._id);
       const newData = response.data.cartItems;
       setCartData(newData);
+      if (newData.length !== 0) {
+        setError(false);
+      }
       setLoader(false);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -52,6 +71,10 @@ function Cart() {
           <View style={styles.cartContains}>
             {loader ? (
               <CartSkeletonPlaceholder />
+            ) : cartData.length === 0 ? (
+              <View>
+                <Text style={styles.buttonText}>No product found</Text>
+              </View>
             ) : (
               cartData?.map((i, index) => {
                 return (
@@ -62,12 +85,19 @@ function Cart() {
                     cartData={cartData}
                     userId={user._id}
                     setCartCount={setCartCount}
+                    setProductsData={setData}
                   />
                 );
               })
             )}
           </View>
-          <SubTotalCard pageNavigate={"Payment"} grandTotal={grandTotal} />
+          <SubTotalCard
+            pageNavigate={"Payment"}
+            grandTotal={grandTotal}
+            cartData={cartData}
+            setError={setError}
+            error={error}
+          />
         </View>
       </ScrollView>
     </ImageBackground>

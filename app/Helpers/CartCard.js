@@ -8,26 +8,52 @@ import { TouchableOpacity } from "react-native";
 import DeleteModal from "./DeleteModal";
 import { deleteCartData } from "../Services/CartService";
 
-function CartCard({ data, cartData, setCartData, userId, setCartCount }) {
+function CartCard({
+  data,
+  cartData,
+  setCartData,
+  userId,
+  setCartCount,
+  setProductsData,
+}) {
   const totalPrice = data?.item?.SalePrice * data?.count;
 
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
+  const [btnLock, setBtnLoack] = useState(false);
+
   const handleDelete = async () => {
     try {
-      console.log(userId, data._id);
-      const response = await deleteCartData(userId, data._id);
-      console.log(response);
+      setBtnLoack(true);
+      const response = await deleteCartData(userId, data?.item?._id);
       if (response.status === 200) {
         setCartCount((prevCartCount) => prevCartCount - 1);
         setCartData((prevData) =>
-          prevData.filter((item) => item._id !== data._id)
+          prevData.filter((item) => item.item._id !== data?.item?._id)
         );
+        setProductsData((prevData) => {
+          const updatedData = prevData.map((item) => {
+            if (item._id === data.item._id) {
+              return {
+                ...item,
+                isCartAdded: false,
+                count: 0,
+              };
+            }
+            return item;
+          });
+
+          return updatedData;
+        });
+
+        setBtnLoack(false);
       } else {
         console.log("Failed to delete on the server");
+        setBtnLoack(false);
       }
     } catch (error) {
       console.error("Error updating count:", error);
+      setBtnLoack(false);
     }
     setIsDeleteModalVisible(false);
   };
@@ -75,6 +101,7 @@ function CartCard({ data, cartData, setCartData, userId, setCartCount }) {
         isVisible={isDeleteModalVisible}
         onDelete={handleDelete}
         onCancel={handleCancel}
+        btnLock={btnLock}
       />
     </View>
   );

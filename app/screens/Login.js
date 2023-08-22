@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -15,9 +15,12 @@ import { useNavigation } from "@react-navigation/native";
 import { userLogin } from "../Services/AuthService";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncService from "../Services/AsyncStorage";
+import AppContext from "../Helpers/UseContextStorage";
 
 function Login() {
   const navigation = useNavigation();
+
+  const { setUser } = useContext(AppContext);
 
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({
@@ -41,7 +44,9 @@ function Login() {
       console.log(response.data.user);
       if (response.status === 200) {
         await AsyncService.login(response.data.user);
+        setUser(response.data.user);
         setLoader(false);
+
         navigation.navigate("Main");
       } else {
         setLoader(false);

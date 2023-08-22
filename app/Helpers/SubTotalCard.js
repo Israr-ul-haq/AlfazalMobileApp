@@ -4,10 +4,15 @@ import CustomText from "./CustomText";
 import Button from "./Buttons";
 import { useNavigation } from "@react-navigation/native";
 
-function SubTotalCard({ pageNavigate, grandTotal }) {
+function SubTotalCard({ pageNavigate, grandTotal, cartData, error, setError }) {
   const navigation = useNavigation();
   const redirect = () => {
-    navigation.navigate(pageNavigate);
+    if (cartData.length !== 0) {
+      navigation.navigate(pageNavigate);
+      setError(false);
+    } else {
+      setError(true);
+    }
   };
 
   return (
@@ -31,7 +36,13 @@ function SubTotalCard({ pageNavigate, grandTotal }) {
         <CustomText bold={true}>Grand Total</CustomText>
         <CustomText bold={true}>Rs: {grandTotal}</CustomText>
       </View>
+
       <View style={styles.pt30}>
+        {error && (
+          <CustomText style={styles.resErrortext} bold={false}>
+            Please add the product in the cart
+          </CustomText>
+        )}
         <Button onPressOk={redirect} title="Pay Now" isButtonFirst={true} />
       </View>
     </View>
@@ -64,6 +75,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#C43E1A",
     marginTop: 15,
+  },
+  resErrortext: {
+    color: "red",
+    marginBottom: 8,
+    fontSize: 10,
+    textAlign: "center",
   },
 });
 export default SubTotalCard;

@@ -7,6 +7,7 @@ import {
   FlatList,
   Text,
   Image,
+  Button,
 } from "react-native";
 import Header from "../Helpers/Header";
 import CustomText from "../Helpers/CustomText";
@@ -24,12 +25,20 @@ import { ScrollView } from "react-native-gesture-handler";
 import SkeletonPlaceholder from "../Helpers/SkeletonLoaders";
 import { baseURL } from "../Constants/axios.config";
 import AppContext from "../Helpers/UseContextStorage";
+import AddressModal from "../Helpers/AddressModal";
 
 function Home() {
   const [showDropdown, setShowDropdown] = useState(false);
-  const { user, data, setData } = useContext(AppContext);
+
+  const [isModalVisible, setModalVisible] = useState(false);
+
+  const { user, data, setData, setUser } = useContext(AppContext);
   const rotationAngle = useState(new Animated.Value(0))[0];
   const initialScrollPosition = useRef(0);
+
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
+  };
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
@@ -82,9 +91,9 @@ function Home() {
   const getData = async () => {
     setSearchLoader(true);
     try {
-      const response = await get(pageNumber, 20, "", user._id);
+      const response = await get(pageNumber, 20, "", user && user?._id);
       const newData = response.data.data;
-      console.log(newData);
+
       setData(newData);
       setSearchLoader(false);
     } catch (error) {
@@ -111,10 +120,6 @@ function Home() {
     }
   };
 
-  const navigateProfile = () => {
-    navigation.navigate("Profile");
-  };
-
   const searchInput = async (search) => {
     setSearchLoader(true);
     setSearch(search);
@@ -130,21 +135,8 @@ function Home() {
       style={styles.background}
       source={require("../assets/backgroundImage.png")}
     >
-      {/* <View style={[styles.header_wrap]}>
-        <CustomText style={styles.HeaderText} bold={true}>
-          Home
-        </CustomText>
-        <TouchableOpacity onPress={navigateProfile}>
-          <Image
-            source={{
-              uri: user?.img ? baseURL + user?.img : PlaceHolder,
-            }}
-            style={styles.header_Image}
-          />
-        </TouchableOpacity>
-      </View> */}
       <Header text={"Home"} />
-
+      <Button title="Show Modal" onPress={toggleModal} />
       <View style={styles.main_contains}>
         <TouchableOpacity onPress={toggleDropdown}>
           <View style={styles.text_contain}>
@@ -185,12 +177,6 @@ function Home() {
             </View>
           </View>
         </View>
-
-        {/* <View style={styles.scrollContentContainer_contains}>
-          <CustomText style={styles.product_text} bold={true}>
-            Products
-          </CustomText>
-        </View> */}
       </View>
 
       <View style={styles.scroller_flatlist}>
@@ -235,6 +221,13 @@ function Home() {
             </View>
           )}
         </ScrollView>
+
+        <AddressModal
+          isModalVisible={isModalVisible}
+          toggleModal={toggleModal}
+          user={user}
+          setUser={setUser}
+        />
       </View>
     </ImageBackground>
   );

@@ -21,6 +21,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 import { deleteImage, rejisterUser, upload } from "../Services/AuthService";
 import { Ionicons } from "@expo/vector-icons";
+import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 
 function SignUp() {
   const scrollViewRef = useRef(null);
@@ -428,16 +429,17 @@ function SignUp() {
               </CustomText>
             )}
           </View>
+
           <View style={styles.inputContainer}>
             <CustomText style={styles.inputText} bold={false}>
-              Address
+              Home Address
             </CustomText>
             <TextInput
               ref={inputRefs.address}
               style={[styles.input, !!errors.address && styles.inputError]} // Apply error styles if there is an error
               onChangeText={(text) => handleInputChange("address", text)}
               value={credentials.address}
-              placeholder="Enter home address"
+              placeholder="City or Village/House No: /Nearest Place/Street No"
               autoCapitalize="none"
               autoCorrect={false}
             />

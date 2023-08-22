@@ -18,7 +18,7 @@ function PaymentCardOptions() {
         <VisaCard />
 
         <RadioButton.Item
-          label="*** *** ***123 456"
+          label="Card"
           color="red"
           status={checked === "option1" ? "checked" : "unchecked"}
           onPress={() => handlePress("option1")}
@@ -29,7 +29,7 @@ function PaymentCardOptions() {
         <JazzCard />
 
         <RadioButton.Item
-          label="*** *** ***123 456"
+          label="Jazz Cash"
           color="red"
           status={checked === "option2" ? "checked" : "unchecked"}
           onPress={() => handlePress("option2")}
@@ -39,7 +39,7 @@ function PaymentCardOptions() {
       <View style={styles.pay_contains}>
         <Image source={EasyPaisa} />
         <RadioButton.Item
-          label="*** *** ***123 456"
+          label="Easy Paisa"
           color="red"
           status={checked === "option3" ? "checked" : "unchecked"}
           onPress={() => handlePress("option3")}

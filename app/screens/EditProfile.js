@@ -34,7 +34,9 @@ function EditProfile() {
   const [loader, setLoader] = useState(false);
 
   const [file, setFile] = useState("");
-  const [imageUrl, setImageUrl] = useState(baseURL + user?.img);
+  const [imageUrl, setImageUrl] = useState(
+    user && user?.img ? baseURL + user?.img : PlaceHolder
+  );
 
   // Function to handle image upload
   const handleImageUpload = async () => {

@@ -14,13 +14,13 @@ import ForgotPassword from "./app/screens/ForgotPassword";
 import AsyncService from "./app/Services/AsyncStorage";
 import { useEffect, useState, useContext } from "react";
 import AppContext from "./app/Helpers/UseContextStorage";
+import Map from "./app/screens/Map";
 
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const { isWelcomeScreen, setUser } = useContext(AppContext);
+  const { isWelcomeScreen, setUser, isLoggedIn, setIsLoggedIn } =
+    useContext(AppContext);
 
   useEffect(() => {
     // Check the login state on app startup
@@ -28,8 +28,6 @@ const AppNavigator = () => {
   }, []);
 
   const checkLoginStatus = async () => {
-    // console.log("logout");
-    // const logout = await AsyncService.logout();
     const loggedIn = await AsyncService.isLoggedIn();
     setIsLoggedIn(loggedIn);
 
@@ -72,6 +70,13 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ViewProduct"
         component={ViewProduct}
+        options={{
+          header: () => null, // Render a custom empty header component
+        }}
+      />
+      <Stack.Screen
+        name="Map"
+        component={Map}
         options={{
           header: () => null, // Render a custom empty header component
         }}

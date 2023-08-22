@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { ActivityIndicator } from "react-native";
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
 
-const DeleteModal = ({ isVisible, onDelete, onCancel }) => {
+const DeleteModal = ({ isVisible, onDelete, onCancel, btnLock }) => {
   return (
     <Modal visible={isVisible} transparent>
       <View style={styles.modalContainer}>
@@ -11,8 +12,18 @@ const DeleteModal = ({ isVisible, onDelete, onCancel }) => {
             Are you sure you want to delete this item?
           </Text>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
-              <Text style={styles.buttonText}>Delete</Text>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={onDelete}
+              disabled={btnLock}
+            >
+              {btnLock ? (
+                <View style={styles.load_contains}>
+                  <ActivityIndicator size="small" color="white" />
+                </View>
+              ) : (
+                <Text style={styles.buttonText}>Delete</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
               <Text style={styles.buttonText}>Cancel</Text>
@@ -41,6 +52,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
+  },
+
+  load_contains: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   message: {
     fontSize: 16,
