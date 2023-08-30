@@ -19,7 +19,7 @@ import SkeletonLoaders from "../Helpers/SkeletonLoaders";
 import { ActivityIndicator } from "react-native-paper";
 import { Animated, Easing } from "react-native";
 import { TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import PlaceHolder from "../assets/PlaceHolder.png";
 import { ScrollView } from "react-native-gesture-handler";
 import SkeletonPlaceholder from "../Helpers/SkeletonLoaders";
@@ -30,15 +30,10 @@ import AddressModal from "../Helpers/AddressModal";
 function Home() {
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const [isModalVisible, setModalVisible] = useState(false);
-
-  const { user, data, setData, setUser } = useContext(AppContext);
+  const { user, data, setData, setUser, setModalVisible, isModalVisible } =
+    useContext(AppContext);
   const rotationAngle = useState(new Animated.Value(0))[0];
   const initialScrollPosition = useRef(0);
-
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
-  };
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
@@ -84,10 +79,11 @@ function Home() {
     setSelectedCategory(category);
   };
 
-  useEffect(() => {
-    getData();
-  }, []);
-
+  useFocusEffect(
+    React.useCallback(() => {
+      getData();
+    }, [])
+  );
   const getData = async () => {
     setSearchLoader(true);
     try {
@@ -136,7 +132,7 @@ function Home() {
       source={require("../assets/backgroundImage.png")}
     >
       <Header text={"Home"} />
-      <Button title="Show Modal" onPress={toggleModal} />
+      {/* <Button title="Show Modal" onPress={toggleModal} /> */}
       <View style={styles.main_contains}>
         <TouchableOpacity onPress={toggleDropdown}>
           <View style={styles.text_contain}>
@@ -221,13 +217,6 @@ function Home() {
             </View>
           )}
         </ScrollView>
-
-        <AddressModal
-          isModalVisible={isModalVisible}
-          toggleModal={toggleModal}
-          user={user}
-          setUser={setUser}
-        />
       </View>
     </ImageBackground>
   );
@@ -410,6 +399,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignContent: "center",
     alignItems: "center",
+    marginBottom: 50,
   },
 
   card_container: {

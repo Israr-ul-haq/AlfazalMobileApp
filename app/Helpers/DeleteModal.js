@@ -2,15 +2,19 @@ import React, { useState } from "react";
 import { ActivityIndicator } from "react-native";
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
 
-const DeleteModal = ({ isVisible, onDelete, onCancel, btnLock }) => {
+const DeleteModal = ({
+  isVisible,
+  onDelete,
+  onCancel,
+  btnLock,
+  deleteText,
+}) => {
   return (
     <Modal visible={isVisible} transparent>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>Confirm Delete</Text>
-          <Text style={styles.message}>
-            Are you sure you want to delete this item?
-          </Text>
+          <Text style={styles.message}>{deleteText}</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.deleteButton}

@@ -102,6 +102,7 @@ function CartCard({
         onDelete={handleDelete}
         onCancel={handleCancel}
         btnLock={btnLock}
+        deleteText={"Are you sure you want to delete this item?"}
       />
     </View>
   );

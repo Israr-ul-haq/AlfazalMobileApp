@@ -12,7 +12,7 @@ import {
 import CustomText from "../Helpers/CustomText";
 import Button from "../Helpers/Buttons";
 import { useNavigation } from "@react-navigation/native";
-import { userLogin } from "../Services/AuthService";
+import { update, userLogin } from "../Services/AuthService";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncService from "../Services/AsyncStorage";
 import AppContext from "../Helpers/UseContextStorage";
@@ -20,7 +20,7 @@ import AppContext from "../Helpers/UseContextStorage";
 function Login() {
   const navigation = useNavigation();
 
-  const { setUser } = useContext(AppContext);
+  const { setUser, expoPushToken } = useContext(AppContext);
 
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({
@@ -41,7 +41,9 @@ function Login() {
     if (validateInputs()) {
       setLoader(true);
       const response = await userLogin(credentials);
-      console.log(response.data.user);
+      const res = await update(response.data.user._id, {
+        deviceId: JSON.stringify(expoPushToken),
+      });
       if (response.status === 200) {
         await AsyncService.login(response.data.user);
         setUser(response.data.user);

@@ -1,50 +1,90 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { View, StyleSheet, Image } from "react-native";
-import Header from "../Helpers/Header";
 import CustomText from "../Helpers/CustomText";
 import BoilingGif from "../assets/boiling.gif";
-import Rider from "../assets/Rider.gif";
+import Rider from "../assets/bike.gif";
+import check from "../assets/check.png";
+import reject from "../assets/close.png";
 
-function ViewOrder() {
-  const [isRider, setIsRider] = useState(false);
-
+function ViewOrder({ orderData }) {
   return (
     <>
       <View style={styles.text_contains}>
         <CustomText bold={false} style={styles.main_heading}>
-          {isRider ? "Your Rider is on the way" : "  Your Food Is preparing"}
+          {orderData?.orderStatus === "pending"
+            ? "Pending"
+            : orderData?.orderStatus === "preparing"
+            ? "Preparing"
+            : orderData?.orderStatus === "accept"
+            ? "Accepted"
+            : orderData?.orderStatus === "reject"
+            ? "Rejected"
+            : orderData?.orderStatus === "onWay"
+            ? "Oneway"
+            : ""}
         </CustomText>
-        <CustomText style={styles.timeHeading}>Time 30min</CustomText>
+
+        {/* <CustomText style={styles.timeHeading}>Time 30min</CustomText> */}
       </View>
       <View style={styles.gif_contains}>
-        <Image source={isRider ? Rider : BoilingGif} />
+        {orderData?.orderStatus === "pending" ? (
+          <CustomText>Please stand by...</CustomText>
+        ) : orderData?.orderStatus === "preparing" ? (
+          <Image source={BoilingGif} />
+        ) : orderData?.orderStatus === "accept" ? (
+          <Image source={check} />
+        ) : orderData?.orderStatus === "reject" ? (
+          <Image source={reject} style={styles.rejectIcon} />
+        ) : orderData?.orderStatus === "onWay" ? (
+          <Image source={Rider} style={styles.rejectIcon} />
+        ) : (
+          ""
+        )}
         <CustomText bold={false} style={styles.gif_tag}>
-          {isRider
-            ? "Will Received your Order Soon"
-            : "Rider Will Pick your Order Soon"}
+          {orderData?.orderStatus === "pending"
+            ? "your order is pending admin approval"
+            : orderData?.orderStatus === "preparing"
+            ? "Your Food Is preparing"
+            : orderData?.orderStatus === "accept"
+            ? "Your Order Accepted by Admin"
+            : orderData?.orderStatus === "reject"
+            ? "Sorry Your Order Request Got Rejected"
+            : orderData?.orderStatus === "onWay"
+            ? "Your Rider is on the way"
+            : ""}
         </CustomText>
       </View>
       <CustomText bold={true}>Order Details</CustomText>
       <View style={styles.font_contains}>
         <CustomText style={styles.font_size}>Order Number</CustomText>
-        <CustomText>#1527B</CustomText>
+        <CustomText>{orderData?.orderId}</CustomText>
       </View>
-      <View style={styles.font_contains}>
-        <CustomText style={styles.font_size}>Delivery Address</CustomText>
+      <View style={styles.delivery}>
+        <CustomText style={styles.font_size}>Location</CustomText>
         <View style={styles.div_width}>
-          <CustomText>B-block #123 lahore</CustomText>
+          <CustomText style={styles.font_text}>
+            {orderData?.address?.mapAddress}
+          </CustomText>
+        </View>
+      </View>
+      <View style={styles.delivery}>
+        <CustomText style={styles.font_size}>Home Address</CustomText>
+        <View style={styles.div_width}>
+          <CustomText style={styles.font_text}>
+            {orderData?.address?.fullAddress}
+          </CustomText>
         </View>
       </View>
       <View style={styles.font_contains}>
         <CustomText style={styles.font_size}>Delivery Charges</CustomText>
-        <CustomText>150</CustomText>
+        <CustomText>{orderData?.deliveryCharges}</CustomText>
       </View>
       <View style={styles.border_line}></View>
       <View style={styles.font_contains_total}>
         <CustomText style={styles.font_size} bold={true}>
           Total
         </CustomText>
-        <CustomText bold={true}>350</CustomText>
+        <CustomText bold={true}>{orderData?.totalAmount}</CustomText>
       </View>
     </>
   );
@@ -54,6 +94,15 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
     backgroundColor: "white",
+  },
+
+  font_text: {
+    fontSize: 12,
+  },
+
+  rejectIcon: {
+    width: 120,
+    height: 120,
   },
   input: {
     borderWidth: 1,
@@ -98,14 +147,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
-  div_width: {
-    width: 120,
-  },
 
   gif_tag: {
     fontSize: 14,
     paddingTop: 20,
     paddingBottom: 30,
+    textAlign: "center",
   },
 
   font_size: {

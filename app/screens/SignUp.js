@@ -287,7 +287,7 @@ function SignUp() {
 
       if (response.status === 200) {
         setLoader(false);
-        navigation.navigate("Main");
+        navigation.navigate("Login");
       } else {
         setLoader(false);
         setErrors((prevErrors) => ({

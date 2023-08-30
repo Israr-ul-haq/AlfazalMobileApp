@@ -61,7 +61,10 @@ function Card({ data, setData }) {
   return (
     <View style={styles.card_Main}>
       <View style={styles.grade_tag}>
-        <Image source={Card_Image} style={styles.card_Iamge} />
+        <Image
+          source={data?.img ? data.img : Card_Image}
+          style={styles.card_Iamge}
+        />
         {data?.count !== 0 && (
           <View style={styles.count_contains}>
             <Text style={styles.counttext} bold={false}>

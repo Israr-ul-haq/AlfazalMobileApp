@@ -3,34 +3,50 @@ import { View, StyleSheet } from "react-native";
 import CustomText from "./CustomText";
 import Button from "./Buttons";
 import { useNavigation } from "@react-navigation/native";
+import { CreateOrder } from "../Services/OrderService";
 
-function SubTotalCard({ pageNavigate, grandTotal, cartData, error, setError }) {
-  const navigation = useNavigation();
-  const redirect = () => {
-    if (cartData.length !== 0) {
-      navigation.navigate(pageNavigate);
-      setError(false);
-    } else {
-      setError(true);
-    }
-  };
-
+function GrandTotal({
+  grandTotal,
+  errors,
+  redirect,
+  deliveryCharges,
+  finalPrice,
+  loader,
+}) {
   return (
     <View style={styles.total_bill}>
       <View style={styles.border_line}></View>
-
       <View style={[styles.pt30, styles.total_text]}>
         <CustomText bold={true}>Sub Total</CustomText>
         <CustomText bold={true}>Rs: {grandTotal}</CustomText>
       </View>
+      <View style={[styles.pt20, styles.total_text]}>
+        <CustomText bold={false} style={styles.font14}>
+          Delivery Charges
+        </CustomText>
+        <CustomText bold={false} style={styles.font14}>
+          Rs: {deliveryCharges}
+        </CustomText>
+      </View>
+      <View style={styles.border}></View>
+
+      <View style={[styles.pt30, styles.total_text]}>
+        <CustomText bold={true}>Grand Total</CustomText>
+        <CustomText bold={true}>Rs: {finalPrice}</CustomText>
+      </View>
 
       <View style={styles.pt30}>
-        {error && (
+        {errors && (
           <CustomText style={styles.resErrortext} bold={false}>
-            Please add the product in the cart
+            {errors.message}
           </CustomText>
         )}
-        <Button onPressOk={redirect} title="Check Out" isButtonFirst={true} />
+        <Button
+          onPressOk={redirect}
+          title="Place Order"
+          isButtonFirst={true}
+          isLoading={loader}
+        />
       </View>
     </View>
   );
@@ -70,4 +86,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-export default SubTotalCard;
+export default GrandTotal;

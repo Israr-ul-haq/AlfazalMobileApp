@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   ImageBackground,
@@ -15,11 +15,16 @@ import Rider from "../assets/Rider.gif";
 import Button from "../Helpers/Buttons";
 import { Rating } from "react-native-ratings";
 import ViewOrder from "../Helpers/ViewOrder";
+import { getOrderByUserId } from "../Services/OrderService";
+import { useFocusEffect } from "@react-navigation/native";
+import AppContext from "../Helpers/UseContextStorage";
+import { ActivityIndicator } from "react-native";
 
 function OrderScreen() {
-  const [isRider, setIsRider] = useState(false);
-
   const [isModalVisible, setModalVisible] = useState(false);
+
+  const { user, orderData, setOrderData } = useContext(AppContext);
+  const [loader, setLoader] = useState(true);
 
   const openModal = () => {
     setModalVisible(true);
@@ -27,6 +32,24 @@ function OrderScreen() {
 
   const closeModal = () => {
     setModalVisible(false);
+  };
+  useFocusEffect(
+    React.useCallback(() => {
+      getData();
+    }, [])
+  );
+
+  const getData = async () => {
+    setLoader(true);
+    const response = await getOrderByUserId(user._id);
+
+    if (response.status === 200) {
+      setOrderData(response?.data[0]);
+      console.log(response);
+      setLoader(false);
+    } else {
+      setLoader(false);
+    }
   };
 
   return (
@@ -37,8 +60,22 @@ function OrderScreen() {
       <Header text={"Order"} isBack={true} navigateUrl={"Home"} />
       <ScrollView style={styles.scrollView} scrollEventThrottle={16}>
         <View style={styles.container}>
-          <ViewOrder />
-          <Button onPressOk={openModal} title="Rate Us" isButtonFirst={true} />
+          {loader ? (
+            <>
+              <ActivityIndicator
+                size="large"
+                color="red"
+                style={styles.spinner}
+              />
+            </>
+          ) : orderData ? (
+            <ViewOrder orderData={orderData} />
+          ) : (
+            <CustomText bold={false} style={styles.order_none}>
+              No active orders
+            </CustomText>
+          )}
+          {/* <Button onPressOk={openModal} title="Rate Us" isButtonFirst={true} /> */}
         </View>
       </ScrollView>
 
@@ -109,6 +146,17 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 10,
     marginBottom: 50,
+  },
+
+  spinner: {
+    paddingTop: 130,
+  },
+
+  order_none: {
+    textAlign: "center",
+    verticalAlign: "middle",
+    justifyContent: "center",
+    paddingVertical: 150,
   },
 
   scrollView: {

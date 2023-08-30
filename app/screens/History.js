@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   ImageBackground,
   View,
@@ -6,46 +6,96 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import Header from "../Helpers/Header";
 import CustomText from "../Helpers/CustomText";
 import ViewOrder from "../Helpers/ViewOrder";
 import CompletedOrders from "../Helpers/CompletedOrders";
+import { useFocusEffect } from "@react-navigation/native";
+import {
+  getOrderByUserId,
+  getOrderByUserIdStatus,
+} from "../Services/OrderService";
+import AppContext from "../Helpers/UseContextStorage";
 
 function History() {
   const [activeTab, setActiveTab] = useState("Tab1");
+  const { user, orderData, setOrderData } = useContext(AppContext);
 
-  const [cartData, setCartData] = useState([
-    {
-      name: "Strawberry Donut",
-      description: "Lorem Ipsum is simply",
-      price: "1250",
-    },
-    {
-      name: "Strawberry Donut",
-      description: "Lorem Ipsum is simply",
-      price: "1250",
-    },
-    {
-      name: "Strawberry Donut",
-      description: "Lorem Ipsum is simply",
-      price: "1250",
-    },
-  ]);
+  const [loader, setLoader] = useState(false);
+  const [btnLock, setBtnLock] = useState(false);
 
-  const handleTabPress = (tab) => {
+  const [ordersHistory, setOrdersHistory] = useState();
+
+  const handleTabPress = async (tab) => {
+    if (tab === "Tab2") {
+      setBtnLock(true);
+      const response = await getOrderByUserIdStatus(user._id);
+      if (response.status === 200) {
+        setOrdersHistory(response.data);
+      }
+      setBtnLock(false);
+    }
     setActiveTab(tab);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      getData();
+    }, [])
+  );
+
+  const getData = async () => {
+    setLoader(true);
+    const response = await getOrderByUserId(user._id);
+
+    if (response.status === 200) {
+      setOrderData(response?.data[0]);
+      console.log(response);
+      setLoader(false);
+    } else {
+      setLoader(false);
+    }
   };
 
   const renderContent = () => {
     if (activeTab === "Tab1") {
-      return <ViewOrder />;
+      return (
+        <>
+          {loader ? (
+            <>
+              <ActivityIndicator
+                size="large"
+                color="red"
+                style={styles.spinner}
+              />
+            </>
+          ) : orderData ? (
+            <ViewOrder orderData={orderData} />
+          ) : (
+            <CustomText bold={false} style={styles.order_none}>
+              No active orders
+            </CustomText>
+          )}
+        </>
+      );
     } else if (activeTab === "Tab2") {
       return (
         <View style={styles.cartContains}>
-          {cartData?.map((i, index) => {
-            return <CompletedOrders data={i} key={index} />;
-          })}
+          {btnLock ? (
+            <>
+              <ActivityIndicator
+                size="large"
+                color="red"
+                style={styles.spinner}
+              />
+            </>
+          ) : (
+            ordersHistory?.map((i, index) => {
+              return <CompletedOrders data={i} key={`cart_${index}`} />;
+            })
+          )}
         </View>
       );
     }
@@ -91,7 +141,7 @@ function History() {
                     : styles.inActiveText,
                 ]}
               >
-                Completed
+                History
               </CustomText>
             </TouchableOpacity>
           </View>
@@ -107,8 +157,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
+  spinner: {
+    paddingTop: 130,
+  },
+
   cartContains: {
     paddingVertical: 30,
+  },
+
+  order_none: {
+    textAlign: "center",
+    verticalAlign: "middle",
+    justifyContent: "center",
+    paddingVertical: 150,
   },
 
   background: {

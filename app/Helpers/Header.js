@@ -9,20 +9,32 @@ import AppContext from "./UseContextStorage";
 import { baseURL } from "../Constants/axios.config";
 import { getCartItems } from "../Services/CartService";
 
-function Header({ text, isBack, navigateUrl }) {
+function Header({
+  text,
+  isBack,
+  navigateUrl,
+  checkText,
+  isModalVisible,
+  setModalVisible,
+}) {
   const navigation = useNavigation();
 
   const { user, setCartCount } = useContext(AppContext);
 
   const navigateBack = () => {
-    navigation.navigate(navigateUrl);
+    if (checkText === "Map") {
+      setModalVisible(!isModalVisible);
+      navigation.navigate(navigateUrl);
+    } else {
+      navigation.navigate(navigateUrl);
+    }
   };
 
   const navigateProfile = () => {
     navigation.navigate("Profile");
   };
 
-  /// Cart Data
+ 
 
   useEffect(() => {
     getData();

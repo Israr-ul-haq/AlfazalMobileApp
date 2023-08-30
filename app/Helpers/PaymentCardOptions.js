@@ -14,7 +14,7 @@ function PaymentCardOptions() {
 
   return (
     <View style={styles.payment__card}>
-      <View style={styles.pay_contains}>
+      {/* <View style={styles.pay_contains}>
         <VisaCard />
 
         <RadioButton.Item
@@ -45,7 +45,7 @@ function PaymentCardOptions() {
           onPress={() => handlePress("option3")}
           labelStyle={{ marginRight: 20 }}
         />
-      </View>
+      </View> */}
       <View style={styles.pay_contains}>
         <Image
           source={Cash}
@@ -53,10 +53,18 @@ function PaymentCardOptions() {
           resizeMode={"contain"}
         />
 
-        <RadioButton.Item
+        {/* <RadioButton.Item
           label="Cash on Delivery"
           color="red"
           status={checked === "option4" ? "checked" : "unchecked"}
+          onPress={() => handlePress("option4")}
+          labelStyle={{ marginRight: 20 }}
+        /> */}
+
+        <RadioButton.Item
+          label="Cash on Delivery"
+          color="red"
+          status={"checked"}
           onPress={() => handlePress("option4")}
           labelStyle={{ marginRight: 20 }}
         />

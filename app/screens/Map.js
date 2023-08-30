@@ -28,7 +28,14 @@ function Map() {
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState("");
   const [mapVisible, setMapVisible] = useState(false);
-  const { user, setUser } = useContext(AppContext);
+  const {
+    user,
+    setUser,
+    isModalVisible,
+    setModalVisible,
+    mapApiStatus,
+    setMapApiStatus,
+  } = useContext(AppContext);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [credentials, setCredentials] = useState({
     address: "",
@@ -83,7 +90,6 @@ function Map() {
     );
     const addressData = await addressResponse.json();
     if (addressData.results.length > 0) {
-      console.log(addressData.results);
       setAddress(addressData.results[0].formatted_address);
     }
     setLoader(false);
@@ -93,7 +99,6 @@ function Map() {
 
   const handleMarkerDragEnd = async (e) => {
     setLoader(true);
-    console.log("drag map", e);
 
     const updatedLocation = {
       latitude: e.latitude,
@@ -105,7 +110,6 @@ function Map() {
     );
     const addressData = await addressResponse.json();
     if (addressData.results.length > 0) {
-      console.log(addressData.results);
       setAddress(addressData.results[0].formatted_address);
     }
     setLoader(false);
@@ -168,17 +172,24 @@ function Map() {
       try {
         const response = await update(user._id, finalUserData);
 
+        console.log(response);
+
         if (response.status === 200) {
-          const updatedAddresses = user?.addresses?.map((address) => ({
-            ...address,
-            isSelected: false,
-          }));
-          const updatedUser = { ...user };
-          updatedUser.addresses = updatedAddresses;
-          updatedUser.addresses.push(finalUserData.newAddress);
+          // Create a new user object with updated addresses and the new address added
+          const updatedUser = {
+            ...user,
+            addresses: response?.data?.user?.addresses,
+          };
+
+          // Update the state with the new user object
+          setUser(updatedUser);
+          setModalVisible(false); // Simplify toggling modal visibility
+          setMapApiStatus((prevMapApiStatus) => !prevMapApiStatus); // Toggle the map API status
+
+          // Update the user asynchronously
           await AsyncService.updateUser(updatedUser);
 
-          navigation.navigate("Main");
+          navigation.navigate("Payment");
           setLoader(false);
         } else {
           setLoader(false);
@@ -198,7 +209,14 @@ function Map() {
       style={styles.background}
       source={require("../assets/backgroundImage.png")}
     >
-      <Header text={"Location"} isBack={true} navigateUrl={"Home"} />
+      <Header
+        text={"Location"}
+        isBack={true}
+        navigateUrl={"Payment"}
+        checkText={"Map"}
+        setModalVisible={setModalVisible}
+        isModalVisible={isModalVisible}
+      />
 
       {mapVisible ? (
         <MapView

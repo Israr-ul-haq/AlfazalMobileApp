@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1046336497214",
+    "project_id": "al-fazal-2092b",
+    "storage_bucket": "al-fazal-2092b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1046336497214:android:9fe81910ebfe1c7e87136f",
+        "android_client_info": {
+          "package_name": "alfazal.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1046336497214-e31ubr6v4demjtvds2ju40cm50oj85cu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDkMSo_gxnk6HTQxkSNagoNx-7P6SIvPcc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1046336497214-e31ubr6v4demjtvds2ju40cm50oj85cu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "BakeryApp",
+    "name": "alfazal.com",
     "slug": "BakeryApp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,20 +11,30 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
-    "suppressDeprecationWarnings": true,
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#ffffff",
+        "googleServicesFile": "./google-services.json"
       },
-      "permissions": ["INTERNET"]
+      "permissions": [
+        "INTERNET"
+      ],
+      "package": "com.israr02.BakeryApp"
     },
     "web": {
       "favicon": "./app/assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "470bff32-608d-401c-be0b-8844ff1cbb7c"
+      }
     }
   }
 }

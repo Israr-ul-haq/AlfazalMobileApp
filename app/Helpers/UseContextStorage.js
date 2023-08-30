@@ -12,6 +12,10 @@ export const AppProvider = ({ children }) => {
   const [cartData, setCartData] = useState([]);
   const [grandTotal, setGrandTotal] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [mapApiStatus, setMapApiStatus] = useState(false);
+  const [expoPushToken, setExpoPushToken] = useState("");
+  const [orderData, setOrderData] = useState();
 
   return (
     <AppContext.Provider
@@ -30,6 +34,14 @@ export const AppProvider = ({ children }) => {
         setGrandTotal,
         isLoggedIn,
         setIsLoggedIn,
+        isModalVisible,
+        setModalVisible,
+        mapApiStatus,
+        setMapApiStatus,
+        expoPushToken,
+        setExpoPushToken,
+        setOrderData,
+        orderData,
       }}
     >
       {children}
