@@ -10,13 +10,13 @@ import {
 } from "react-native";
 import ProductImage from "../assets/food.jpg";
 import CustomText from "../Helpers/CustomText";
-import { Rating } from "react-native-ratings";
 import Button from "../Helpers/Buttons";
 import Counter from "../Helpers/Counter";
 import { useRoute } from "@react-navigation/native";
 import { getById } from "../Services/ProdunctsService";
 import { AddCart } from "../Services/CartService";
 import AppContext from "../Helpers/UseContextStorage";
+import { baseURL } from "../Constants/axios.config";
 
 function ViewProduct() {
   const route = useRoute();
@@ -84,11 +84,22 @@ function ViewProduct() {
         <Header text="Product Details" isBack={true} navigateUrl={"Home"} />
 
         <View style={styles.contains}>
-          <Image
-            source={ProductImage}
-            style={styles.product_Image}
-            resizeMode="cover"
-          />
+          {data?.img ? (
+            <Image
+              source={{
+                uri: baseURL + data?.img,
+              }}
+              style={styles.product_Image}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image
+              source={ProductImage}
+              style={styles.product_Image}
+              resizeMode="cover"
+            />
+          )}
+
           <ImageBackground
             style={styles.productDetails_contains}
             source={require("../assets/backgroundImage.png")}
@@ -107,16 +118,7 @@ function ViewProduct() {
                 Rs: {data?.SalePrice}/
                 {data?.ProductType === "Piece" ? "Pcs" : "kg"}
               </CustomText>
-              <Rating
-                readonly // Disables the rating change
-                startingValue={3}
-                imageSize={12} // Decreases the size of stars
-                ratingBackgroundColor="lightgray" // Changes the color of empty stars
-                showRating={false} // Removes the text from the rating component
-                style={styles.rating_star}
-              />
             </View>
-
             <Counter setCount={setCount} count={count} />
           </View>
           <View style={styles.description_contains}>

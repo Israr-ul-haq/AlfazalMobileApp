@@ -8,6 +8,7 @@ import { useNavigation } from "@react-navigation/native";
 import AppContext from "./UseContextStorage";
 import { baseURL } from "../Constants/axios.config";
 import { getCartItems } from "../Services/CartService";
+import { getOrderByUserId } from "../Services/OrderService";
 
 function Header({
   text,
@@ -19,7 +20,7 @@ function Header({
 }) {
   const navigation = useNavigation();
 
-  const { user, setCartCount } = useContext(AppContext);
+  const { user, setCartCount, setOrderData } = useContext(AppContext);
 
   const navigateBack = () => {
     if (checkText === "Map") {
@@ -34,8 +35,6 @@ function Header({
     navigation.navigate("Profile");
   };
 
- 
-
   useEffect(() => {
     getData();
   }, []);
@@ -43,8 +42,14 @@ function Header({
   const getData = async () => {
     try {
       const response = await getCartItems(user && user?._id);
-      const newData = response.data.totalCount;
-      setCartCount(newData);
+      const OrderResponse = await getOrderByUserId(user && user?._id);
+      if (OrderResponse.status === 200) {
+        setOrderData(OrderResponse?.data[0]);
+      }
+      if (response.status === 200) {
+        const newData = response.data.totalCount;
+        setCartCount(newData);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }

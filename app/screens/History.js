@@ -52,7 +52,6 @@ function History() {
 
     if (response.status === 200) {
       setOrderData(response?.data[0]);
-      console.log(response);
       setLoader(false);
     } else {
       setLoader(false);
@@ -92,8 +91,8 @@ function History() {
               />
             </>
           ) : (
-            ordersHistory?.map((i, index) => {
-              return <CompletedOrders data={i} key={`cart_${index}`} />;
+            ordersHistory?.reverse()?.map((i, index) => {
+              return <CompletedOrders data={i} key={`order_${index}`} />;
             })
           )}
         </View>

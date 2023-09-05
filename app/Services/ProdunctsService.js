@@ -10,6 +10,16 @@ export const get = async (pageNumber, pageSize, search, userId) => {
     return error.response;
   }
 };
+export const getCategories = async (page, limit, search) => {
+  try {
+    const response = await axios.get(
+      `/get/category/data?page=${page}&limit=${limit}&search=${search}`
+    );
+    return response;
+  } catch (error) {
+    return error.response;
+  }
+};
 
 export const getById = async (id) => {
   try {

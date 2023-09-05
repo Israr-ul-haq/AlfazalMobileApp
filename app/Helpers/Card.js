@@ -8,6 +8,7 @@ import { EyeImage } from "./SVGs";
 import { useNavigation } from "@react-navigation/native";
 import { AddCart } from "../Services/CartService";
 import AppContext from "./UseContextStorage";
+import { baseURL } from "../Constants/axios.config";
 
 function Card({ data, setData }) {
   const navigation = useNavigation();
@@ -60,11 +61,18 @@ function Card({ data, setData }) {
 
   return (
     <View style={styles.card_Main}>
-      <View style={styles.grade_tag}>
-        <Image
-          source={data?.img ? data.img : Card_Image}
-          style={styles.card_Iamge}
-        />
+      <TouchableOpacity style={styles.grade_tag} onPress={navigateProduct}>
+        {data?.img ? (
+          <Image
+            source={{
+              uri: baseURL + data?.img,
+            }}
+            style={styles.card_Iamge}
+          />
+        ) : (
+          <Image source={Card_Image} style={styles.card_Iamge} />
+        )}
+
         {data?.count !== 0 && (
           <View style={styles.count_contains}>
             <Text style={styles.counttext} bold={false}>
@@ -73,15 +81,18 @@ function Card({ data, setData }) {
           </View>
         )}
 
-        <View style={styles.grade}>
+        {/* <View style={styles.grade}>
           <Text style={styles.grade_text} bold={false}>
             4.5
           </Text>
           <Image source={Grade} style={styles.star_image} />
-        </View>
-      </View>
+        </View> */}
+      </TouchableOpacity>
+
       <View style={styles.product_name}>
-        <Text style={styles.card_title}>{data?.Name}</Text>
+        <TouchableOpacity onPress={navigateProduct}>
+          <Text style={styles.card_title}>{data?.Name}</Text>
+        </TouchableOpacity>
         <View style={styles.price_contains}>
           <Text style={styles.price} bold={false}>
             Price
@@ -90,6 +101,7 @@ function Card({ data, setData }) {
             Rs: {data?.SalePrice}/{data?.ProductType === "Piece" ? "Pcs" : "kg"}
           </Text>
         </View>
+
         <View style={styles.cart_section}>
           <TouchableOpacity
             style={styles.button}

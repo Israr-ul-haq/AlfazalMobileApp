@@ -106,7 +106,7 @@ function PaymentScreen() {
       const response = await getLookups(lookupsId);
       const distanceValue = parseFloat(distance.replace("Km", "").trim());
       if (!isNaN(distanceValue)) {
-        const perPerPrice = response.data.Per_Per_Price;
+        const perPerPrice = response.data.Rate_Per_Kilometer;
         const result = perPerPrice * distanceValue;
         const newGrandTotal = grandTotal + result;
         setFinalPrice(newGrandTotal);
@@ -154,18 +154,21 @@ function PaymentScreen() {
         totalAmount: finalPrice,
         distance: distance,
       };
+      try {
+        const response = await CreateOrder(finalData);
+        console.log(response);
+        if (response.status === 200) {
+          navigation.navigate("Order");
+          setLoader(false);
+        } else {
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            message: response.data.message,
+          }));
 
-      const response = await CreateOrder(finalData);
-
-      if (response.status === 200) {
-        navigation.navigate("Order");
-        setLoader(false);
-      } else {
-        setErrors((prevErrors) => ({
-          ...prevErrors,
-          message: response.data.message,
-        }));
-
+          setLoader(false);
+        }
+      } catch (error) {
         setLoader(false);
       }
     } else {

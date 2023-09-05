@@ -7,6 +7,7 @@ import { DeleteIcon } from "./SVGs";
 import { TouchableOpacity } from "react-native";
 import DeleteModal from "./DeleteModal";
 import { deleteCartData } from "../Services/CartService";
+import { baseURL } from "../Constants/axios.config";
 
 function CartCard({
   data,
@@ -71,11 +72,22 @@ function CartCard({
         <DeleteIcon />
       </TouchableOpacity>
       <View style={styles.cart_inner_contain}>
-        <Image
-          source={cartImage}
-          style={styles.cart_image}
-          resizeMode={"contain"}
-        />
+        {data?.item?.img ? (
+          <Image
+            source={{
+              uri: baseURL + data?.item?.img,
+            }}
+            style={styles.cart_image}
+            resizeMode={"contain"}
+          />
+        ) : (
+          <Image
+            source={cartImage}
+            style={styles.cart_image}
+            resizeMode={"contain"}
+          />
+        )}
+
         <View style={styles.text_content}>
           <CustomText bold={false} style={styles.card_text}>
             {data?.item?.Name}
@@ -119,6 +131,8 @@ const styles = StyleSheet.create({
 
   cart_image: {
     width: 120,
+    height: 100,
+    borderRadius: 10,
   },
 
   deleteIcon: {

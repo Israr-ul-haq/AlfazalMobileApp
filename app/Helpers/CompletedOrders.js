@@ -3,8 +3,10 @@ import { View, StyleSheet, Image } from "react-native";
 import moment from "moment-timezone";
 
 import CustomText from "./CustomText";
+import { AirbnbRating } from "react-native-ratings";
+import { Text } from "react-native";
 
-function CompletedOrders({ data, key }) {
+function CompletedOrders({ data }) {
   const formattedDate = moment(data?.createdOn)
     .tz("Asia/Karachi")
     .format("DD/MM/YYYY");
@@ -13,7 +15,7 @@ function CompletedOrders({ data, key }) {
     .format("hh:mm A");
 
   return (
-    <View style={styles.CartCard} key={key}>
+    <View style={styles.CartCard}>
       <View style={styles.cart_inner_contain}>
         <View style={styles.text_content}>
           <CustomText bold={false} style={styles.card_text}>
@@ -42,6 +44,19 @@ function CompletedOrders({ data, key }) {
           <CustomText bold={false} style={styles.cardText_date}>
             {formattedTime}
           </CustomText>
+          {data?.rating !== null && data?.rating !== 0 ? (
+            <AirbnbRating
+              count={5}
+              defaultRating={data.rating}
+              showRating={false}
+              size={20}
+              isDisabled={true}
+            />
+          ) : (
+            <CustomText bold={false} style={styles.rating_null}>
+              No rating available
+            </CustomText>
+          )}
         </View>
       </View>
     </View>
@@ -59,6 +74,11 @@ const styles = StyleSheet.create({
   cart_image: {
     width: 120,
     height: 80,
+  },
+
+  ratingContainer: {
+    width: 10,
+    height: 20,
   },
 
   cart_inner_contain: {
@@ -85,6 +105,10 @@ const styles = StyleSheet.create({
   para1: {
     fontSize: 10,
     color: "red",
+  },
+
+  rating_null: {
+    fontSize: 10,
   },
 
   price: {

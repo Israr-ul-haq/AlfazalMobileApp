@@ -24,3 +24,11 @@ export const getOrderByUserIdStatus = async (id) => {
     return error.response;
   }
 };
+export const submitReview = async (body) => {
+  try {
+    const response = await axios.post(`/review/create/data`, body);
+    return response;
+  } catch (error) {
+    return error.response;
+  }
+};

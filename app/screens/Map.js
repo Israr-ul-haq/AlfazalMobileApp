@@ -10,7 +10,11 @@ import {
 import Header from "../Helpers/Header";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
-import { ScrollView } from "react-native-gesture-handler";
+import {
+  PanGestureHandler,
+  ScrollView,
+  State,
+} from "react-native-gesture-handler";
 import AppContext from "../Helpers/UseContextStorage";
 import { Image } from "react-native";
 import { baseURL, googleApiKey } from "../Constants/axios.config";
@@ -22,11 +26,17 @@ import Button from "../Helpers/Buttons";
 import { update } from "../Services/AuthService";
 import { Location as LocationMarker } from "../Helpers/SVGs";
 import AsyncService from "../Services/AsyncStorage";
+import { debounce, throttle } from "lodash";
 
 function Map() {
   const mapRef = useRef(null);
+
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState("");
+  const [markerScreenPosition, setMarkerScreenPosition] = useState({
+    x: 0,
+    y: 0,
+  });
   const [mapVisible, setMapVisible] = useState(false);
   const {
     user,
@@ -50,15 +60,22 @@ function Map() {
     message: "",
   });
 
-  useFocusEffect(
-    React.useCallback(() => {
-      getCurrentLocation();
-    }, [])
-  );
+  // useFocusEffect(
+  //   React.useCallback(() => {
+
+  //   }, [])
+  // );
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
 
   const getCurrentLocation = async () => {
+    console.log("data popoulate");
     setLoader(true);
-    let { status } = await Location.requestForegroundPermissionsAsync();
+    let { status } = await Location.requestForegroundPermissionsAsync({
+      enableHighAccuracy: true,
+    });
     if (status !== "granted") {
       console.log("Permission to access location was denied");
       return;
@@ -97,22 +114,37 @@ function Map() {
     setMapVisible(true);
   };
 
-  const handleMarkerDragEnd = async (e) => {
+  let addressUpdateTimer;
+
+  const handleMarkerDragEnd = (e) => {
     setLoader(true);
 
     const updatedLocation = {
       latitude: e.latitude,
       longitude: e.longitude,
     };
-    // // Get the address from the updated location using Google Places API
-    const addressResponse = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${updatedLocation.latitude},${updatedLocation.longitude}&key=${googleApiKey}`
-    );
-    const addressData = await addressResponse.json();
-    if (addressData.results.length > 0) {
-      setAddress(addressData.results[0].formatted_address);
-    }
-    setLoader(false);
+
+    // Clear the existing timer
+    clearTimeout(addressUpdateTimer);
+
+    // Start a new timer to delay the API call
+    addressUpdateTimer = setTimeout(async () => {
+      try {
+        // Get the address from the updated location using Google Places API
+        const addressResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${updatedLocation.latitude},${updatedLocation.longitude}&key=${googleApiKey}`
+        );
+        const addressData = await addressResponse.json();
+
+        if (addressData.results.length > 0) {
+          setAddress(addressData.results[0].formatted_address);
+        }
+      } catch (error) {
+        console.error("Error fetching address:", error);
+      } finally {
+        setLoader(false);
+      }
+    }, 500); // Adjust the delay as needed
   };
 
   const handleRelocate = () => {
@@ -121,86 +153,57 @@ function Map() {
     }
   };
 
-  const handlePlaceSelect = (data, details) => {
-    const { lat: latitude, lng: longitude } = details.geometry.location;
-    setLocation({ latitude, longitude });
-
-    // Get the address details from the Google Places API response and update the address state
-    const address = details.formatted_address;
-    setAddress(address);
-  };
+  const throttledHandleMarkerDragEnd = throttle(handleMarkerDragEnd, 300);
 
   const handleInputChange = (field, value) => {
     setCredentials({ ...credentials, [field]: value });
     setErrors({ ...errors, [field]: "" }); // Clear the error message for the field
   };
 
-  const validateInputs = () => {
-    let isValid = true;
-
-    // Validate address
-    if (!credentials.address || !credentials.address.trim()) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        address: "Address is required",
-      }));
-      isValid = false;
-    } else {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        address: "",
-      }));
-    }
-
-    return isValid;
-  };
-
   const handleSubmit = async () => {
-    if (validateInputs()) {
-      setLoader(true);
+    setLoader(true);
 
-      const finalUserData = {
-        newAddress: {
-          lat: location.latitude,
-          lng: location.longitude,
-          isSelected: true,
-          fullAddress: credentials.address,
-          mapAddress: address,
-        },
-      };
+    const finalUserData = {
+      newAddress: {
+        lat: location.latitude,
+        lng: location.longitude,
+        isSelected: true,
+        fullAddress: credentials.address,
+        mapAddress: address,
+      },
+    };
 
-      try {
-        const response = await update(user._id, finalUserData);
+    try {
+      const response = await update(user._id, finalUserData);
 
-        console.log(response);
+      console.log(response);
 
-        if (response.status === 200) {
-          // Create a new user object with updated addresses and the new address added
-          const updatedUser = {
-            ...user,
-            addresses: response?.data?.user?.addresses,
-          };
+      if (response.status === 200) {
+        // Create a new user object with updated addresses and the new address added
+        const updatedUser = {
+          ...user,
+          addresses: response?.data?.user?.addresses,
+        };
 
-          // Update the state with the new user object
-          setUser(updatedUser);
-          setModalVisible(false); // Simplify toggling modal visibility
-          setMapApiStatus((prevMapApiStatus) => !prevMapApiStatus); // Toggle the map API status
+        // Update the state with the new user object
+        setUser(updatedUser);
+        setModalVisible(false); // Simplify toggling modal visibility
+        setMapApiStatus((prevMapApiStatus) => !prevMapApiStatus); // Toggle the map API status
 
-          // Update the user asynchronously
-          await AsyncService.updateUser(updatedUser);
+        // Update the user asynchronously
+        await AsyncService.updateUser(updatedUser);
 
-          navigation.navigate("Payment");
-          setLoader(false);
-        } else {
-          setLoader(false);
-          setErrors((prevErrors) => ({
-            ...prevErrors,
-            message: response.data.message,
-          }));
-        }
-      } catch (error) {
-        console.log(error);
+        navigation.navigate("Payment");
+        setLoader(false);
+      } else {
+        setLoader(false);
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          message: response.data.message,
+        }));
       }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -230,7 +233,11 @@ function Map() {
           }}
           pointsOfInterest
           mapType="standard"
-          onRegionChange={(newRegion) => setLocation(newRegion)}
+          onRegionChangeComplete={(newRegion) => {
+            setLocation(newRegion);
+            throttledHandleMarkerDragEnd(newRegion);
+          }}
+          zoomEnabled={true}
           minDelta={0.009} // Adjust this value as needed
           onLayout={() => {
             if (!mapLoaded && mapRef.current) {
@@ -246,22 +253,27 @@ function Map() {
               setMapLoaded(true);
             }
           }}
-          onRegionChangeComplete={(e) => handleMarkerDragEnd(e)}
         >
-          <Marker
-            coordinate={location}
-            draggable
-            onDragEnd={handleMarkerDragEnd}
-          >
-            <View style={styles.markerContainer}>
-              <ImageBackground
-                source={{ uri: baseURL + user?.img }}
-                style={styles.markerIcon}
-                imageStyle={styles.circleImage}
-              ></ImageBackground>
-              <View style={styles.pointer} />
-            </View>
-          </Marker>
+          {location && (
+            <Marker
+              draggable
+              coordinate={location}
+              anchor={{ x: 0.5, y: 0.5 }} // Center of the marker
+              style={{
+                left: markerScreenPosition.x,
+                top: markerScreenPosition.y,
+              }}
+            >
+              <View style={styles.markerContainer}>
+                <ImageBackground
+                  source={{ uri: baseURL + user?.img }}
+                  style={styles.markerIcon}
+                  imageStyle={styles.circleImage}
+                ></ImageBackground>
+                <View style={styles.pointer} />
+              </View>
+            </Marker>
+          )}
         </MapView>
       ) : (
         <ActivityIndicator size="large" color="red" style={styles.spinner} />
@@ -278,16 +290,6 @@ function Map() {
               source={require("../assets/Location2.png")}
             />
           </TouchableOpacity>
-          {/* <GooglePlacesAutocomplete
-            placeholder="Search for an address"
-            onPress={handlePlaceSelect}
-            value={address}
-            query={{
-              key: "AIzaSyAC0r847AiujXM9n3nSUEC-XjtN913Ri-8",
-              language: "en", // Language of the results
-            }}
-            // Additional styling if needed
-          /> */}
           <View style={styles.contains}>
             <View style={styles.map_address}>
               {address && (
@@ -305,7 +307,7 @@ function Map() {
                 Home Address
               </CustomText>
               <TextInput
-                style={[styles.input, !!errors.address && styles.inputError]} // Apply error styles if there is an error
+                style={[styles.input]} // Apply error styles if there is an error
                 onChangeText={(text) => handleInputChange("address", text)}
                 value={credentials?.address}
                 placeholder="City or Village/House No: /Nearest Place/Street No"
@@ -314,11 +316,6 @@ function Map() {
                 multiline={true}
                 numberOfLines={4}
               />
-              {!!errors.address && (
-                <CustomText style={styles.errorText} bold={false}>
-                  {errors.address}
-                </CustomText>
-              )}
             </View>
             <View>
               {!!errors.message && (

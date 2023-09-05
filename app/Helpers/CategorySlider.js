@@ -8,14 +8,12 @@ import {
 } from "react-native";
 import CustomText from "./CustomText";
 
-const CategorySlider = ({ categories, onCategoryChange }) => {
-  const [activeCategory, setActiveCategory] = useState(categories[0]);
+const CategorySlider = ({
+  categories,
 
-  const handleCategoryChange = (category) => {
-    setActiveCategory(category);
-    onCategoryChange(category);
-  };
-
+  activeCategory,
+  handleCategoryChange,
+}) => {
   return (
     <ScrollView
       horizontal
@@ -24,20 +22,20 @@ const CategorySlider = ({ categories, onCategoryChange }) => {
     >
       {categories.map((category) => (
         <TouchableOpacity
-          key={category}
+          key={category._id} // Assuming each category object has a unique identifier like '_id'
           style={[
             styles.category,
-            activeCategory === category && styles.activeCategory,
+            activeCategory._id === category._id && styles.activeCategory,
           ]}
           onPress={() => handleCategoryChange(category)}
         >
           <CustomText
             style={[
               styles.categoryText,
-              activeCategory === category && styles.activeCategoryText,
+              activeCategory._id === category._id && styles.activeCategoryText,
             ]}
           >
-            {category}
+            {category.Name}
           </CustomText>
         </TouchableOpacity>
       ))}

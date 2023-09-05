@@ -4,36 +4,32 @@ import {
   StyleSheet,
   ImageBackground,
   TextInput,
-  FlatList,
   Text,
-  Image,
-  Button,
+  BackHandler,
 } from "react-native";
 import Header from "../Helpers/Header";
 import CustomText from "../Helpers/CustomText";
 import CategorySlider from "../Helpers/CategorySlider";
 import CardTag from "../Helpers/Card";
 import { ArrowMenu, Search } from "../Helpers/SVGs";
-import { get } from "../Services/ProdunctsService";
-import SkeletonLoaders from "../Helpers/SkeletonLoaders";
+import { get, getCategories } from "../Services/ProdunctsService";
 import { ActivityIndicator } from "react-native-paper";
-import { Animated, Easing } from "react-native";
+import { Animated } from "react-native";
 import { TouchableOpacity } from "react-native";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import PlaceHolder from "../assets/PlaceHolder.png";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView } from "react-native-gesture-handler";
 import SkeletonPlaceholder from "../Helpers/SkeletonLoaders";
-import { baseURL } from "../Constants/axios.config";
 import AppContext from "../Helpers/UseContextStorage";
-import AddressModal from "../Helpers/AddressModal";
+import CakeImage from "../assets/icons8-birthday-cake.gif";
+import { Image } from "react-native";
 
 function Home() {
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const { user, data, setData, setUser, setModalVisible, isModalVisible } =
-    useContext(AppContext);
+  const { user, data, setData } = useContext(AppContext);
   const rotationAngle = useState(new Animated.Value(0))[0];
   const initialScrollPosition = useRef(0);
+  const [isHasNext, setIsHasNext] = useState();
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
@@ -49,20 +45,12 @@ function Home() {
     outputRange: ["0deg", "90deg"],
   });
 
-  const categories = [
-    "Category 1",
-    "Category 2",
-    "Category 3",
-    "Category 4",
-    "Category 5",
-  ];
-  const [selectedCategory, setSelectedCategory] = useState("");
-
   const [loader, setLoader] = useState(false);
   const [searchLoader, setSearchLoader] = useState(false);
   const [pageNumber, setPageNumber] = useState(1);
+  const [categoryData, setCategoryData] = useState();
   const [search, setSearch] = useState("");
-  const navigation = useNavigation();
+  const [activeCategory, setActiveCategory] = useState();
   const scrollViewRef = useRef(null);
   const handleScroll = (event) => {
     initialScrollPosition.current = event.nativeEvent.contentOffset.y;
@@ -73,11 +61,20 @@ function Home() {
       y: initialScrollPosition.current,
       animated: false,
     });
-  }, []); // Scroll to the initial position when the component mounts
 
-  const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
-  };
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Do nothing when the user is on the Home screen (or the desired logged-in screen)
+        // You can add logic here to prompt the user to log out, if needed.
+        return true; // Return true to prevent the default back button behavior
+      }
+    );
+
+    return () => {
+      backHandler.remove(); // Clean up the event listener when the component unmounts
+    };
+  }, []); // Scroll to the initial position when the component mounts
 
   useFocusEffect(
     React.useCallback(() => {
@@ -88,10 +85,24 @@ function Home() {
     setSearchLoader(true);
     try {
       const response = await get(pageNumber, 20, "", user && user?._id);
+      const categoryResponse = await getCategories(null, null, "");
       const newData = response.data.data;
+      if (response.status === 200) {
+        setData(newData);
+        setIsHasNext(response.data.hasNextPage);
+        setSearchLoader(false);
+      } else {
+        setSearchLoader(false);
+      }
 
-      setData(newData);
-      setSearchLoader(false);
+      if (categoryResponse.status === 200) {
+        const allCategory = { _id: "1", Name: "All" }; // Creating a new category object
+        const categoriesWithAll = [allCategory, ...categoryResponse.data.data]; // Adding the new category to the list
+
+        setCategoryData(categoriesWithAll);
+        setActiveCategory(allCategory); // Set the selected category to "All"
+        setSearchLoader(false);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       setSearchLoader(false);
@@ -119,12 +130,43 @@ function Home() {
   const searchInput = async (search) => {
     setSearchLoader(true);
     setSearch(search);
-    const response = await get(1, 10, search, user._id);
-    setData(response.data.data);
-    setSearchLoader(false);
+    try {
+      const response = await get(1, 10, search, user._id);
+      if (response.status === 200) {
+        setData(response.data.data);
+        setSearchLoader(false);
+      } else {
+        setSearchLoader(false);
+      }
+    } catch (error) {
+      console.log(error);
+      setSearchLoader(false);
+    }
   };
 
   const CardMemo = memo(CardTag);
+
+  const handleCategoryChange = async (category) => {
+    setSearchLoader(true);
+    try {
+      const response = await get(
+        1,
+        20,
+        category._id === "1" ? "" : category._id
+      );
+      if (response.status === 200) {
+        setData(response.data.data);
+        setActiveCategory(category);
+
+        setSearchLoader(false);
+      } else {
+        setSearchLoader(false);
+      }
+    } catch (error) {
+      console.log(error);
+      setSearchLoader(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -132,7 +174,7 @@ function Home() {
       source={require("../assets/backgroundImage.png")}
     >
       <Header text={"Home"} />
-      {/* <Button title="Show Modal" onPress={toggleModal} /> */}
+
       <View style={styles.main_contains}>
         <TouchableOpacity onPress={toggleDropdown}>
           <View style={styles.text_contain}>
@@ -152,8 +194,10 @@ function Home() {
           </View>
           {showDropdown && (
             <CategorySlider
-              categories={categories}
-              onCategoryChange={handleCategoryChange}
+              categories={categoryData}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
+              handleCategoryChange={handleCategoryChange}
             />
           )}
         </TouchableOpacity>
@@ -185,6 +229,10 @@ function Home() {
           <View style={styles.card_container}>
             {searchLoader ? (
               <SkeletonPlaceholder />
+            ) : data.length === 0 ? (
+              <>
+                <Text style={styles.buttonText}>No product found</Text>
+              </>
             ) : (
               data?.map((item, index) => {
                 return (
@@ -204,7 +252,7 @@ function Home() {
               </View>
             )}
 
-          {data?.length !== 0 && !loader && (
+          {isHasNext && !loader && (
             <View style={styles.load_contains}>
               <TouchableOpacity
                 style={styles.load_section}
@@ -218,6 +266,12 @@ function Home() {
           )}
         </ScrollView>
       </View>
+
+      <View style={styles.gif_cakeImage_contains}>
+        <View style={styles.gif_cake_back}>
+          <Image source={CakeImage} style={styles.gif_cakeImage} />
+        </View>
+      </View>
     </ImageBackground>
   );
 }
@@ -230,9 +284,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  gif_cakeImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+  },
+  gif_cake_back: {
+    position: "absolute",
+    bottom: 80,
+    right: 30,
+    borderWidth: 1,
+    borderColor: "red",
+    borderStyle: "dashed",
+  },
+
+  gif_cakeImage_contains: {
+    position: "relative",
+  },
+
   background: {
     flex: 1,
     backgroundColor: "white",
+  },
+
+  buttonText: {
+    textAlign: "center",
+    alignItems: "center",
+    width: "100%",
   },
   rowContainer: {
     flexDirection: "row",

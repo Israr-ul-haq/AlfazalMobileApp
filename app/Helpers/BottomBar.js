@@ -13,7 +13,7 @@ import { Text, View } from "react-native";
 const Tab = createBottomTabNavigator();
 
 const BottomBarMenu = () => {
-  const { cartCount } = useContext(AppContext);
+  const { cartCount, orderData } = useContext(AppContext);
 
   const CartIconWithBadge = ({ cartCount }) => {
     return (
@@ -37,6 +37,29 @@ const BottomBarMenu = () => {
               {cartCount}
             </Text>
           </View>
+        )}
+      </View>
+    );
+  };
+
+  const OrderIconBadge = ({ orderData }) => {
+    return (
+      <View>
+        <OrdersSvg width={24} height={24} color="black" />
+        {orderData && (
+          <View
+            style={{
+              position: "absolute",
+              top: -5,
+              right: -2,
+              backgroundColor: "red",
+              borderRadius: 10,
+              width: 10,
+              height: 10,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          ></View>
         )}
       </View>
     );
@@ -95,8 +118,14 @@ const BottomBarMenu = () => {
       <Tab.Screen
         name="History"
         component={History}
+        // options={{
+        //   tabBarIcon: () => <OrdersSvg />,
+        //   header: () => null,
+        // }}
         options={{
-          tabBarIcon: () => <OrdersSvg />,
+          tabBarIcon: ({ color, size }) => (
+            <OrderIconBadge orderData={orderData} />
+          ),
           header: () => null,
         }}
       />
