@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -12,15 +12,35 @@ import {
 import CustomText from "../Helpers/CustomText";
 import Button from "../Helpers/Buttons";
 import { useNavigation } from "@react-navigation/native";
-import { update, userLogin } from "../Services/AuthService";
+import {
+  checkUser,
+  rejisterUser,
+  update,
+  userLogin,
+} from "../Services/AuthService";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncService from "../Services/AsyncStorage";
 import AppContext from "../Helpers/UseContextStorage";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 
+// andriod 1046336497214-1osfnqu8jj6ofadhsr4117nr2ln6u2ok.apps.googleusercontent.com
+/// ios 1046336497214-e25jamfnu3sapjjl9u9fe0kr83kfjrol.apps.googleusercontent.com
+//  web client "1046336497214-rn1d97dk7sg96240tsflt0dkdd008qj2.apps.googleusercontent.com"
 function Login() {
   const navigation = useNavigation();
 
   const { setUser, expoPushToken } = useContext(AppContext);
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId:
+      "1046336497214-rn1d97dk7sg96240tsflt0dkdd008qj2.apps.googleusercontent.com",
+    androidClientId:
+      "1046336497214-1osfnqu8jj6ofadhsr4117nr2ln6u2ok.apps.googleusercontent.com",
+    iosClientId:
+      "1046336497214-e25jamfnu3sapjjl9u9fe0kr83kfjrol.apps.googleusercontent.com",
+    redirectUri: "https://auth.expo.io/@israr02/BakeryApp",
+  });
 
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({
@@ -40,13 +60,14 @@ function Login() {
   const handleLogin = async () => {
     if (validateInputs()) {
       setLoader(true);
-      const response = await userLogin(credentials);
-      const res = await update(response.data.user._id, {
+
+      const responseData = await userLogin(credentials);
+      const res = await update(responseData.data.user._id, {
         deviceId: JSON.stringify(expoPushToken),
       });
-      if (response.status === 200) {
-        await AsyncService.login(response.data.user);
-        setUser(response.data.user);
+      if (responseData.status === 200) {
+        await AsyncService.login(responseData.data.user);
+        setUser(responseData.data.user);
         setLoader(false);
 
         navigation.navigate("Main");
@@ -54,8 +75,64 @@ function Login() {
         setLoader(false);
         setErrors((prevErrors) => ({
           ...prevErrors,
-          message: response.data.message,
+          message: responseData.data.message,
         }));
+      }
+    }
+  };
+
+  useEffect(() => {
+    handleGogoleLogin();
+  }, [response]);
+
+  const handleGogoleLogin = async () => {
+    if (response?.type === "success") {
+      const googleUserInfo = await getUserInfo(
+        response?.authentication?.accessToken
+      );
+
+      // Check if the user exists in your database based on some identifier, e.g., email
+      // Replace 'checkIfUserExists' with your actual database check logic
+      const userIdentifier = {
+        email: googleUserInfo?.user?.email,
+      }; // Assuming you can use the email as an identifier
+      const existingUser = await checkUser(userIdentifier);
+
+      if (existingUser.status === 200) {
+        await AsyncService.login(existingUser.data.user);
+        const res = await update(existingUser.data.user._id, {
+          deviceId: JSON.stringify(expoPushToken),
+        });
+        setUser(existingUser.data.user);
+        setLoader(false);
+        navigation.navigate("Main");
+      } else {
+        const userRejister = {
+          email: googleUserInfo.user.email,
+          name: googleUserInfo.user.name,
+          img: googleUserInfo.user.photoUrl,
+          role: "user",
+        };
+        // If the user doesn't exist in your database, register them using the Google response
+        const registrationResponse = await rejisterUser(userRejister);
+
+        if (registrationResponse.status === 200) {
+          const res = await update(existingUser.data.user._id, {
+            deviceId: JSON.stringify(expoPushToken),
+          });
+          await AsyncService.login(registrationResponse.data.user);
+          setUser(registrationResponse.data.user);
+          setLoader(false);
+          navigation.navigate("Main");
+        } else {
+          // Handle registration error
+          setLoader(false);
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            message: "Registration failed",
+          }));
+          return;
+        }
       }
     }
   };
@@ -117,6 +194,21 @@ function Login() {
 
   const togglePasswordVisibility = () => {
     setShowPassword((prevShowPassword) => !prevShowPassword);
+  };
+
+  const getUserInfo = async (token) => {
+    if (!token) return;
+
+    try {
+      const response = await fetch(`https://www.google.com/userinfo/v2/me`, {
+        headers: { Authorization: "Bearer " + token },
+      });
+
+      const user = await response.json();
+      return user;
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -219,7 +311,10 @@ function Login() {
                 Facebook
               </CustomText>
             </View>
-            <View style={styles.icon_text}>
+            <TouchableOpacity
+              style={styles.icon_text}
+              onPress={() => promptAsync()}
+            >
               <Image
                 style={styles.facebookIcon}
                 source={require("../assets/Google.png")}
@@ -228,7 +323,7 @@ function Login() {
               <CustomText style={styles.text_iconGoogle} bold={true}>
                 Google
               </CustomText>
-            </View>
+            </TouchableOpacity>
             <View style={styles.icon_text}>
               <Image
                 style={styles.facebookIcon}

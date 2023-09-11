@@ -232,7 +232,10 @@ function ForgotPassword() {
       >
         <View style={styles.mainTextConatiner}>
           <View style={styles.logoContains}>
-            <Image style={styles.logo} source={require("../assets/logo.png")} />
+            <Image
+              style={styles.logo}
+              source={require("../assets/logo-placeholder.png")}
+            />
           </View>
 
           {isOtpInput && (

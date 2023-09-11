@@ -32,7 +32,10 @@ function WelcomeScreen() {
       source={require("../assets/backgroundImage.png")}
     >
       <View style={styles.logoContainer}>
-        <Image style={styles.logo} source={require("../assets/logo.png")} />
+        <Image
+          style={styles.logo}
+          source={require("../assets/logo-placeholder.png")}
+        />
       </View>
     </ImageBackground>
   );

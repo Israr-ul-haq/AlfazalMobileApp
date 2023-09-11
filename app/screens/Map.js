@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Header from "../Helpers/Header";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, Polygon } from "react-native-maps";
 import * as Location from "expo-location";
 import {
   PanGestureHandler,
@@ -17,7 +17,7 @@ import {
 } from "react-native-gesture-handler";
 import AppContext from "../Helpers/UseContextStorage";
 import { Image } from "react-native";
-import { baseURL, googleApiKey } from "../Constants/axios.config";
+import { baseURL, googleApiKey, lookupsId } from "../Constants/axios.config";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import CustomText from "../Helpers/CustomText";
@@ -27,6 +27,8 @@ import { update } from "../Services/AuthService";
 import { Location as LocationMarker } from "../Helpers/SVGs";
 import AsyncService from "../Services/AsyncStorage";
 import { debounce, throttle } from "lodash";
+import { IsPointInPolygon } from "../Helpers/MapPolygon";
+import { getLookups } from "../Services/LookupsService";
 
 function Map() {
   const mapRef = useRef(null);
@@ -51,6 +53,8 @@ function Map() {
     address: "",
   });
 
+  const [polygonCordinates, setPolygonCordinates] = useState([]);
+
   const [loader, setLoader] = useState(false);
 
   const navigation = useNavigation();
@@ -71,8 +75,14 @@ function Map() {
   }, []);
 
   const getCurrentLocation = async () => {
-    console.log("data popoulate");
     setLoader(true);
+    console.log("data");
+    const response = await getLookups(lookupsId);
+
+    if (response.status === 200) {
+      setPolygonCordinates(response.data.MapRangeLimit);
+    }
+
     let { status } = await Location.requestForegroundPermissionsAsync({
       enableHighAccuracy: true,
     });
@@ -83,6 +93,32 @@ function Map() {
 
     let currentLocation = await Location.getCurrentPositionAsync({});
 
+    const currentPoint = {
+      latitude: currentLocation.coords.latitude,
+      longitude: currentLocation.coords.longitude,
+    };
+
+    const isInsidePolygon = IsPointInPolygon(
+      currentPoint,
+      response.data.MapRangeLimit
+    );
+    if (!isInsidePolygon) {
+      setLoader(false);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        message:
+          "Location out of delivery range. We apologize, but we do not deliver to this area",
+      }));
+
+      console.log(isInsidePolygon);
+    } else {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        message: "",
+      }));
+
+      console.log(isInsidePolygon);
+    }
     const newLocation = {
       latitude: currentLocation.coords.latitude,
       longitude: currentLocation.coords.longitude,
@@ -135,6 +171,26 @@ function Map() {
           `https://maps.googleapis.com/maps/api/geocode/json?latlng=${updatedLocation.latitude},${updatedLocation.longitude}&key=${googleApiKey}`
         );
         const addressData = await addressResponse.json();
+        console.log(polygonCordinates);
+        const isInsidePolygon = IsPointInPolygon(
+          updatedLocation,
+          polygonCordinates
+        );
+        if (!isInsidePolygon) {
+          setLoader(false);
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            message:
+              "Location out of delivery range. We apologize, but we do not deliver to this area",
+          }));
+          console.log(isInsidePolygon);
+        } else {
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            message: "",
+          }));
+          console.log(isInsidePolygon);
+        }
 
         if (addressData.results.length > 0) {
           setAddress(addressData.results[0].formatted_address);
@@ -162,7 +218,10 @@ function Map() {
 
   const handleSubmit = async () => {
     setLoader(true);
-
+    if (errors.message !== "") {
+      setLoader(false);
+      return;
+    }
     const finalUserData = {
       newAddress: {
         lat: location.latitude,
@@ -192,9 +251,9 @@ function Map() {
 
         // Update the user asynchronously
         await AsyncService.updateUser(updatedUser);
+        setLoader(false);
 
         navigation.navigate("Payment");
-        setLoader(false);
       } else {
         setLoader(false);
         setErrors((prevErrors) => ({
@@ -206,6 +265,11 @@ function Map() {
       console.log(error);
     }
   };
+
+  const convertedDeliveryAreaPolygon = polygonCordinates.map((point) => ({
+    latitude: point.lat,
+    longitude: point.lng,
+  }));
 
   return (
     <ImageBackground
@@ -254,6 +318,10 @@ function Map() {
             }
           }}
         >
+          <Polygon
+            coordinates={convertedDeliveryAreaPolygon}
+            fillColor="rgba(0, 0, 0, 0.4)" // Transparent black color
+          />
           {location && (
             <Marker
               draggable
@@ -352,6 +420,7 @@ const styles = StyleSheet.create({
   error_contains: {
     textAlign: "center",
     alignItems: "center",
+    paddingBottom: 10,
   },
 
   text_div: {
@@ -388,7 +457,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
 
-    fontSize: 8,
+    fontSize: 10,
   },
 
   inputText: {

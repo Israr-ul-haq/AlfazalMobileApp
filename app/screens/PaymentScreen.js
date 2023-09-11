@@ -24,6 +24,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getLookups } from "../Services/LookupsService";
 import GrandTotal from "../Helpers/GrandTotal";
 import { CreateOrder } from "../Services/OrderService";
+import { IsPointInPolygon } from "../Helpers/MapPolygon";
 
 function PaymentScreen() {
   const {
@@ -41,6 +42,7 @@ function PaymentScreen() {
   const [selectedAddresses, setSelectedAddresses] = useState([]);
   const [initialRegion, setInitialRegion] = useState();
   const [loader, setLoader] = useState(false);
+  const [shopLocation, setShopLocation] = useState();
 
   const [distance, setDistance] = useState("");
   const [polyline_points, setPolylinePoints] = useState("");
@@ -51,8 +53,8 @@ function PaymentScreen() {
     message: "",
   });
 
-  const origin = { lat: 32.700604678980156, lng: 73.95412629470229 };
-  const destination = { lat: 32.799898381851335, lng: 73.95322440192103 };
+  const [lookupsData, setLookupsData] = useState();
+
   const navigation = useNavigation();
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
@@ -73,18 +75,8 @@ function PaymentScreen() {
         parseFloat(filteredAddresses[0].lng)
       );
 
-      const intial = {
-        latitude: (origin.lat + parseFloat(filteredAddresses[0]?.lat)) / 2,
-        longitude: (origin.lng + parseFloat(filteredAddresses[0]?.lng)) / 2,
-        latitudeDelta: 0.2,
-        longitudeDelta: 0.2,
-      };
-
-      setInitialRegion(intial);
-
       setSelectedAddresses(filteredAddresses);
       setLoader(false);
-      setMapVisible(false);
     } else {
       setSelectedAddresses([]);
       setMapVisible(false);
@@ -96,23 +88,48 @@ function PaymentScreen() {
 
   const getMapDirections = async (lat, lng) => {
     try {
+      const response = await getLookups(lookupsId);
       const { distance, polylinePoints } = await getDirections(
-        destination.lat,
-        destination.lng,
+        response.data.ShopLocation.Latitude,
+        response.data.ShopLocation.Longitude,
         lat,
         lng
       );
 
-      const response = await getLookups(lookupsId);
+      const intial = {
+        latitude: (response.data.ShopLocation.Latitude + parseFloat(lat)) / 2,
+        longitude: (response.data.ShopLocation.Longitude + parseFloat(lng)) / 2,
+        latitudeDelta: 0.2,
+        longitudeDelta: 0.2,
+      };
+
+      setInitialRegion(intial);
+
+      setLookupsData(response.data);
+
       const distanceValue = parseFloat(distance.replace("Km", "").trim());
       if (!isNaN(distanceValue)) {
-        const perPerPrice = response.data.Rate_Per_Kilometer;
-        const result = perPerPrice * distanceValue;
-        const newGrandTotal = grandTotal + result;
-        setFinalPrice(newGrandTotal);
-        setDeliveryCharges(result);
+        if (response.data.KmRangeLimit < distanceValue) {
+          const perPerPrice = response.data.Rate_Per_Kilometer;
+          const result = perPerPrice * distanceValue;
+          const newGrandTotal = grandTotal + result;
+          setFinalPrice(newGrandTotal);
+          setDeliveryCharges(result);
+        } else {
+          const result = response.data.RangeFixedDeliveryCharges;
+          const newGrandTotal = grandTotal + result;
+          setFinalPrice(newGrandTotal);
+          setDeliveryCharges(result);
+        }
+        setShopLocation({
+          lat: response.data.ShopLocation.Latitude,
+          lng: response.data.ShopLocation.Longitude,
+        });
+
+        setMapVisible(false);
       } else {
         console.log("Invalid distance value");
+        setMapVisible(false);
       }
       setDistance(distance);
       setPolylinePoints(polylinePoints);
@@ -137,6 +154,66 @@ function PaymentScreen() {
         message: "", // Clear the name error message
       }));
     }
+    if (selectedAddresses.length !== 0) {
+      const updatedLocation = {
+        latitude: selectedAddresses[0].lat,
+        longitude: selectedAddresses[0].lng,
+      };
+
+      const isInsidePolygon = IsPointInPolygon(
+        updatedLocation,
+        lookupsData.MapRangeLimit
+      );
+      if (!isInsidePolygon) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          message:
+            "Location out of delivery range. We apologize, but we do not deliver to this area",
+        }));
+        isValid = false;
+      } else {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          message: "",
+        }));
+      }
+    }
+
+    const timeZone = "Asia/Karachi";
+
+    // Create options for formatting time
+    const timeOptions = {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false, // Use 24-hour format
+      timeZone, // Set the time zone
+    };
+
+    // Get the current time in the Pakistan time zone
+    const currentDateTime = new Date().toLocaleTimeString("en-US", timeOptions);
+
+    // Get the shop's opening and closing times in the Pakistan time zone
+    const shopOpenTime = new Date(
+      lookupsData.ShopOpeningsTiming
+    ).toLocaleTimeString("en-US", timeOptions);
+    const shopCloseTime = new Date(
+      lookupsData.ShopClosingTiming
+    ).toLocaleTimeString("en-US", timeOptions);
+
+    if (currentDateTime < shopOpenTime || currentDateTime > shopCloseTime) {
+      // Shop is closed, show error message with timing
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        message: `Shop is closed. Open from ${shopOpenTime} to ${shopCloseTime}`,
+      }));
+      isValid = false;
+    } else {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        message: "",
+      }));
+    }
+
     return isValid;
   };
 
@@ -213,13 +290,13 @@ function PaymentScreen() {
             </Marker>
             <Marker
               coordinate={{
-                latitude: destination.lat,
-                longitude: destination.lng,
+                latitude: shopLocation?.lat,
+                longitude: shopLocation?.lng,
               }}
             >
               <View style={styles.markerContainer}>
                 <ImageBackground
-                  source={require("../assets/logo.png")}
+                  source={require("../assets/logo-placeholder.png")}
                   style={styles.markerIcon}
                   imageStyle={styles.circleImage}
                 ></ImageBackground>

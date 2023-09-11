@@ -27,7 +27,7 @@ function GettingStarted() {
       </View>
       <Image
         style={styles.logo}
-        source={require("../assets/logo.png")}
+        source={require("../assets/logo-placeholder.png")}
         resizeMode="contain"
       />
       <View style={styles.mainTextConatiner}>

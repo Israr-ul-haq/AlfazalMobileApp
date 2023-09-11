@@ -12,6 +12,14 @@ export const userLogin = async (body) => {
     return error.response;
   }
 };
+export const checkUser = async (body) => {
+  try {
+    const response = await axios.post(`/user/check`, body);
+    return response;
+  } catch (error) {
+    return error.response;
+  }
+};
 export const rejisterUser = async (body) => {
   try {
     const response = await axios.post(`/addUser`, body);
