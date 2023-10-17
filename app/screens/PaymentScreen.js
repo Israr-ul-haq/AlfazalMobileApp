@@ -19,12 +19,13 @@ import AddressModal from "../Helpers/AddressModal";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { getDirections } from "../Services/AuthService";
 import { decodePolyline } from "../Helpers/DecodePolyline";
-import { baseURL, lookupsId } from "../Constants/axios.config";
+import { lookupsId } from "../Constants/axios.config";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getLookups } from "../Services/LookupsService";
 import GrandTotal from "../Helpers/GrandTotal";
 import { CreateOrder } from "../Services/OrderService";
 import { IsPointInPolygon } from "../Helpers/MapPolygon";
+import { refreshLocation } from "../Helpers/RefreshLocation";
 
 function PaymentScreen() {
   const {
@@ -37,6 +38,7 @@ function PaymentScreen() {
     mapApiStatus,
     setMapApiStatus,
     cartData,
+    setCurrentLocation,
   } = useContext(AppContext);
 
   const [selectedAddresses, setSelectedAddresses] = useState([]);
@@ -61,6 +63,10 @@ function PaymentScreen() {
   };
 
   useEffect(() => {
+    getMapData();
+  }, [mapApiStatus]);
+
+  const getMapData = async () => {
     console.log("data");
     setMapVisible(true);
     setLoader(true);
@@ -68,12 +74,65 @@ function PaymentScreen() {
     const filteredAddresses = user?.addresses?.filter(
       (address) => address.isSelected
     );
+    const response = await getLookups(lookupsId);
+    if (response.status === 200) {
+      setLookupsData(response.data);
+    }
 
     if (filteredAddresses.length !== 0) {
-      getMapDirections(
-        parseFloat(filteredAddresses[0].lat),
-        parseFloat(filteredAddresses[0].lng)
-      );
+      try {
+        const { distance, polylinePoints } = await getDirections(
+          response.data.ShopLocation.Latitude,
+          response.data.ShopLocation.Longitude,
+          parseFloat(filteredAddresses[0].lat),
+          parseFloat(filteredAddresses[0].lng)
+        );
+
+        const intial = {
+          latitude:
+            (response.data.ShopLocation.Latitude +
+              parseFloat(filteredAddresses[0].lat)) /
+            2,
+          longitude:
+            (response.data.ShopLocation.Longitude +
+              parseFloat(filteredAddresses[0].lng)) /
+            2,
+          latitudeDelta: 0.2,
+          longitudeDelta: 0.2,
+        };
+
+        setInitialRegion(intial);
+
+        const distanceValue = parseFloat(distance.replace("Km", "").trim());
+        if (!isNaN(distanceValue)) {
+          if (response.data.KmRangeLimit < distanceValue) {
+            const perPerPrice = response.data.Rate_Per_Kilometer;
+            const result = perPerPrice * distanceValue;
+            const newGrandTotal = grandTotal + result;
+            setFinalPrice(newGrandTotal);
+            setDeliveryCharges(result.toFixed(2));
+          } else {
+            const result = response.data.RangeFixedDeliveryCharges;
+            const newGrandTotal = grandTotal + result;
+            setFinalPrice(newGrandTotal);
+            setDeliveryCharges(result);
+          }
+          setShopLocation({
+            lat: response.data.ShopLocation.Latitude,
+            lng: response.data.ShopLocation.Longitude,
+          });
+
+          setMapVisible(false);
+        } else {
+          console.log("Invalid distance value");
+          setMapVisible(false);
+        }
+
+        setDistance(distance);
+        setPolylinePoints(polylinePoints);
+      } catch (error) {
+        console.error("Error:", error);
+      }
 
       setSelectedAddresses(filteredAddresses);
       setLoader(false);
@@ -84,62 +143,15 @@ function PaymentScreen() {
       setFinalPrice(0);
       setDeliveryCharges(0);
     }
-  }, [mapApiStatus]);
 
-  const getMapDirections = async (lat, lng) => {
-    try {
-      const response = await getLookups(lookupsId);
-      const { distance, polylinePoints } = await getDirections(
-        response.data.ShopLocation.Latitude,
-        response.data.ShopLocation.Longitude,
-        lat,
-        lng
-      );
-
-      const intial = {
-        latitude: (response.data.ShopLocation.Latitude + parseFloat(lat)) / 2,
-        longitude: (response.data.ShopLocation.Longitude + parseFloat(lng)) / 2,
-        latitudeDelta: 0.2,
-        longitudeDelta: 0.2,
-      };
-
-      setInitialRegion(intial);
-
-      setLookupsData(response.data);
-
-      const distanceValue = parseFloat(distance.replace("Km", "").trim());
-      if (!isNaN(distanceValue)) {
-        if (response.data.KmRangeLimit < distanceValue) {
-          const perPerPrice = response.data.Rate_Per_Kilometer;
-          const result = perPerPrice * distanceValue;
-          const newGrandTotal = grandTotal + result;
-          setFinalPrice(newGrandTotal);
-          setDeliveryCharges(result);
-        } else {
-          const result = response.data.RangeFixedDeliveryCharges;
-          const newGrandTotal = grandTotal + result;
-          setFinalPrice(newGrandTotal);
-          setDeliveryCharges(result);
-        }
-        setShopLocation({
-          lat: response.data.ShopLocation.Latitude,
-          lng: response.data.ShopLocation.Longitude,
-        });
-
-        setMapVisible(false);
-      } else {
-        console.log("Invalid distance value");
-        setMapVisible(false);
-      }
-      setDistance(distance);
-      setPolylinePoints(polylinePoints);
-    } catch (error) {
-      console.error("Error:", error);
-    }
+    const location = await refreshLocation();
+    setCurrentLocation(location);
   };
 
   const validateInputs = () => {
     let isValid = true;
+
+    console.log(selectedAddresses.length);
 
     // Validate name
     if (selectedAddresses.length === 0) {
@@ -148,6 +160,7 @@ function PaymentScreen() {
         message: "Please select a address",
       }));
       isValid = false;
+      return;
     } else {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -165,12 +178,15 @@ function PaymentScreen() {
         lookupsData.MapRangeLimit
       );
       if (!isInsidePolygon) {
+        console.log(isInsidePolygon);
+
         setErrors((prevErrors) => ({
           ...prevErrors,
           message:
             "Location out of delivery range. We apologize, but we do not deliver to this area",
         }));
         isValid = false;
+        return;
       } else {
         setErrors((prevErrors) => ({
           ...prevErrors,
@@ -219,6 +235,7 @@ function PaymentScreen() {
 
   const redirect = async () => {
     if (validateInputs()) {
+      console.log("redirect");
       setLoader(true);
       const finalData = {
         userId: user._id,
@@ -281,7 +298,7 @@ function PaymentScreen() {
             >
               <View style={styles.markerContainer}>
                 <ImageBackground
-                  source={{ uri: baseURL + user?.img }}
+                  source={{ uri:  user?.img }}
                   style={styles.markerIcon}
                   imageStyle={styles.circleImage}
                 ></ImageBackground>

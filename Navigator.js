@@ -18,8 +18,11 @@ import Map from "./app/screens/Map";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-import { Platform } from "react-native";
+import { Alert, BackHandler, Platform } from "react-native";
 import ReviewModal from "./app/Helpers/ReviewModal";
+import * as Location from "expo-location";
+import * as Linking from "expo-linking";
+import { refreshLocation } from "./app/Helpers/RefreshLocation";
 
 // import firebase from "./firebase"; // Import the firebase configuration
 
@@ -76,6 +79,7 @@ const AppNavigator = () => {
     setExpoPushToken,
     setOrderData,
     user,
+    setCurrentLocation,
   } = useContext(AppContext);
 
   const notificationListener = useRef();
@@ -85,6 +89,7 @@ const AppNavigator = () => {
 
   useEffect(() => {
     // Check the login state on app startup
+    checkLocation();
     checkLoginStatus();
   }, []);
 
@@ -99,6 +104,39 @@ const AppNavigator = () => {
       if (fetchedUser.orderReviewStatus) {
         openModal();
       }
+    }
+  };
+
+  const checkLocation = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync({
+      enableHighAccuracy: true,
+    });
+    if (status !== "granted") {
+      console.log("Permission to access location was denied");
+
+      Alert.alert(
+        "Permission Denied",
+        "Permission to access location was denied. Would you like to open settings to enable it?",
+        [
+          {
+            text: "Open Settings",
+            onPress: () => {
+              // Open the app's settings using Linking
+              Linking.openSettings();
+            },
+          },
+          {
+            text: "Exit App",
+            onPress: () => {
+              // Exit the app when the user chooses "Exit App"
+              BackHandler.exitApp();
+            },
+          },
+        ]
+      );
+    } else {
+      const location = await refreshLocation();
+      setCurrentLocation(location);
     }
   };
 

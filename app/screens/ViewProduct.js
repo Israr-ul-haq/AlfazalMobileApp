@@ -16,7 +16,7 @@ import { useRoute } from "@react-navigation/native";
 import { getById } from "../Services/ProdunctsService";
 import { AddCart } from "../Services/CartService";
 import AppContext from "../Helpers/UseContextStorage";
-import { baseURL } from "../Constants/axios.config";
+
 
 function ViewProduct() {
   const route = useRoute();
@@ -87,7 +87,7 @@ function ViewProduct() {
           {data?.img ? (
             <Image
               source={{
-                uri: baseURL + data?.img,
+                uri: data?.img,
               }}
               style={styles.product_Image}
               resizeMode="cover"

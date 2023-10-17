@@ -16,6 +16,7 @@ export const AppProvider = ({ children }) => {
   const [mapApiStatus, setMapApiStatus] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState("");
   const [orderData, setOrderData] = useState();
+  let [currentLocation, setCurrentLocation] = useState();
 
   return (
     <AppContext.Provider
@@ -42,6 +43,8 @@ export const AppProvider = ({ children }) => {
         setExpoPushToken,
         setOrderData,
         orderData,
+        currentLocation,
+        setCurrentLocation,
       }}
     >
       {children}

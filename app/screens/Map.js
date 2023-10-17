@@ -17,7 +17,7 @@ import {
 } from "react-native-gesture-handler";
 import AppContext from "../Helpers/UseContextStorage";
 import { Image } from "react-native";
-import { baseURL, googleApiKey, lookupsId } from "../Constants/axios.config";
+import {  googleApiKey, lookupsId } from "../Constants/axios.config";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import CustomText from "../Helpers/CustomText";
@@ -29,6 +29,7 @@ import AsyncService from "../Services/AsyncStorage";
 import { debounce, throttle } from "lodash";
 import { IsPointInPolygon } from "../Helpers/MapPolygon";
 import { getLookups } from "../Services/LookupsService";
+import GIF from "../assets/Eyesanimation.gif";
 
 function Map() {
   const mapRef = useRef(null);
@@ -47,6 +48,8 @@ function Map() {
     setModalVisible,
     mapApiStatus,
     setMapApiStatus,
+    currentLocation,
+    setCurrentLocation,
   } = useContext(AppContext);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [credentials, setCredentials] = useState({
@@ -75,79 +78,111 @@ function Map() {
   }, []);
 
   const getCurrentLocation = async () => {
-    setLoader(true);
-    console.log("data");
-    const response = await getLookups(lookupsId);
-
-    if (response.status === 200) {
-      setPolygonCordinates(response.data.MapRangeLimit);
-    }
-
-    let { status } = await Location.requestForegroundPermissionsAsync({
-      enableHighAccuracy: true,
-    });
-    if (status !== "granted") {
-      console.log("Permission to access location was denied");
-      return;
-    }
-
-    let currentLocation = await Location.getCurrentPositionAsync({});
-
-    const currentPoint = {
-      latitude: currentLocation.coords.latitude,
-      longitude: currentLocation.coords.longitude,
-    };
-
-    const isInsidePolygon = IsPointInPolygon(
-      currentPoint,
-      response.data.MapRangeLimit
-    );
-    if (!isInsidePolygon) {
-      setLoader(false);
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        message:
-          "Location out of delivery range. We apologize, but we do not deliver to this area",
-      }));
-
-      console.log(isInsidePolygon);
-    } else {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        message: "",
-      }));
-
-      console.log(isInsidePolygon);
-    }
-    const newLocation = {
-      latitude: currentLocation.coords.latitude,
-      longitude: currentLocation.coords.longitude,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421,
-    };
-
-    if (mapRef.current) {
-      mapRef.current.fitToCoordinates([newLocation], {
-        edgePadding: {
-          top: 50, // Adjust this value as needed
-          right: 50,
-          bottom: 50,
-          left: 50,
-        },
-        animated: true,
+    try {
+      console.log("Running");
+      let { status } = await Location.requestForegroundPermissionsAsync({
+        enableHighAccuracy: true,
       });
-    }
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
 
-    const addressResponse = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${newLocation.latitude},${newLocation.longitude}&key=${googleApiKey}`
-    );
-    const addressData = await addressResponse.json();
-    if (addressData.results.length > 0) {
-      setAddress(addressData.results[0].formatted_address);
+        Alert.alert(
+          "Permission Denied",
+          "Permission to access location was denied. Would you like to open settings to enable it?",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                // Open the app's settings using Linking
+                Linking.openSettings();
+              },
+            },
+            {
+              text: "Exit App",
+              onPress: () => {
+                // Exit the app when the user chooses "Exit App"
+                BackHandler.exitApp();
+              },
+            },
+          ]
+        );
+        return; // Exit the function if permission is denied
+      } else {
+        const response = await getLookups(lookupsId);
+        if (response.status === 200) {
+          setPolygonCordinates(response.data.MapRangeLimit);
+        }
+
+        const currentPoint = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        };
+
+        console.log(currentPoint);
+
+        const isInsidePolygon = IsPointInPolygon(
+          currentPoint,
+          response.data.MapRangeLimit
+        );
+
+        console.log(isInsidePolygon, "polgon");
+        if (!isInsidePolygon) {
+          setLoader(false);
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            message:
+              "Location out of delivery range. We apologize, but we do not deliver to this area",
+          }));
+        } else {
+          setErrors((prevErrors) => ({
+            ...prevErrors,
+            message: "",
+          }));
+        }
+        const newLocation = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        };
+
+        console.log(newLocation, "newLocation");
+
+        if (mapRef.current) {
+          mapRef.current.fitToCoordinates([newLocation], {
+            edgePadding: {
+              top: 50, // Adjust this value as needed
+              right: 50,
+              bottom: 50,
+              left: 50,
+            },
+            animated: true,
+          });
+        }
+        console.log(mapRef.current, "current map");
+
+        const addressResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${newLocation.latitude},${newLocation.longitude}&key=${googleApiKey}`
+        );
+        const addressData = await addressResponse.json();
+
+        console.log(addressData, "addressData");
+        if (addressData.results.length > 0) {
+          setAddress(addressData.results[0].formatted_address);
+        }
+        setLoader(false);
+        setLocation(newLocation);
+        setMapVisible(true);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      // Handle any errors that occurred during the execution of this function.
+      // You can display error messages or take appropriate actions.
     }
-    setLoader(false);
-    setLocation(newLocation);
-    setMapVisible(true);
   };
 
   let addressUpdateTimer;
@@ -320,7 +355,7 @@ function Map() {
         >
           <Polygon
             coordinates={convertedDeliveryAreaPolygon}
-            fillColor="rgba(0, 0, 0, 0.4)" // Transparent black color
+            fillColor="rgba(0, 128, 0, 0.2)"
           />
           {location && (
             <Marker
@@ -334,7 +369,7 @@ function Map() {
             >
               <View style={styles.markerContainer}>
                 <ImageBackground
-                  source={{ uri: baseURL + user?.img }}
+                  source={{ uri:  user?.img }}
                   style={styles.markerIcon}
                   imageStyle={styles.circleImage}
                 ></ImageBackground>
@@ -344,7 +379,9 @@ function Map() {
           )}
         </MapView>
       ) : (
-        <ActivityIndicator size="large" color="red" style={styles.spinner} />
+        <>
+          <ActivityIndicator size="large" color="red" style={styles.spinner} />
+        </>
       )}
 
       {mapVisible && (
@@ -520,7 +557,8 @@ const styles = StyleSheet.create({
   },
 
   spinner: {
-    width: "100%",
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
 

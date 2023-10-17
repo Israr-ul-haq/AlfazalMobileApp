@@ -22,7 +22,6 @@ import Header from "../Helpers/Header";
 import PlaceHolder from "../assets/PlaceHolder.png";
 import { Camera } from "../Helpers/SVGs";
 import AppContext from "../Helpers/UseContextStorage";
-import { baseURL } from "../Constants/axios.config";
 import { deleteImage, update, upload } from "../Services/AuthService";
 import AsyncService from "../Services/AsyncStorage";
 
@@ -35,7 +34,7 @@ function EditProfile() {
 
   const [file, setFile] = useState("");
   const [imageUrl, setImageUrl] = useState(
-    user && user?.img ? baseURL + user?.img : PlaceHolder
+    user && user?.img ? user?.img : PlaceHolder
   );
 
   // Function to handle image upload

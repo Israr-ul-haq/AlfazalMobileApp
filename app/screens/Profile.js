@@ -15,7 +15,7 @@ import CustomText from "../Helpers/CustomText";
 import CustomDropdown from "../Helpers/CustomDropdown";
 import { useNavigation } from "@react-navigation/native";
 import AppContext from "../Helpers/UseContextStorage";
-import { baseURL } from "../Constants/axios.config";
+
 import { deleteImage, upload } from "../Services/AuthService";
 import * as ImagePicker from "expo-image-picker";
 import AsyncService from "../Services/AsyncStorage";
@@ -87,7 +87,7 @@ function Profile() {
             <View style={styles.imageContains}>
               <Image
                 source={{
-                  uri: user && user?.img ? baseURL + user?.img : PlaceHolder,
+                  uri: user && user?.img ? user?.img : PlaceHolder,
                 }}
                 style={styles.previewImage}
               />

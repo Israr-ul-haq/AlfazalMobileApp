@@ -1,5 +1,5 @@
-import React from "react";
-import { Text, StyleSheet, View, Image } from "react-native";
+import React, { useEffect } from "react";
+import { Text, StyleSheet, View, Image, BackHandler } from "react-native";
 import CustomText from "../Helpers/CustomText";
 import Button from "../Helpers/Buttons";
 import { useNavigation } from "@react-navigation/native";
@@ -14,6 +14,21 @@ function GettingStarted() {
   const redirect = () => {
     navigation.navigate("SignUp");
   };
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Do nothing when the user is on the Home screen (or the desired logged-in screen)
+        // You can add logic here to prompt the user to log out, if needed.
+        return true; // Return true to prevent the default back button behavior
+      }
+    );
+
+    return () => {
+      backHandler.remove(); // Clean up the event listener when the component unmounts
+    };
+  }, []);
 
   return (
     <View style={styles.container}>

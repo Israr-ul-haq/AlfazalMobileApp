@@ -266,12 +266,12 @@ function Home() {
           )}
         </ScrollView>
       </View>
-
+      {/* 
       <View style={styles.gif_cakeImage_contains}>
         <View style={styles.gif_cake_back}>
           <Image source={CakeImage} style={styles.gif_cakeImage} />
         </View>
-      </View>
+      </View> */}
     </ImageBackground>
   );
 }

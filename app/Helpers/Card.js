@@ -8,7 +8,7 @@ import { EyeImage } from "./SVGs";
 import { useNavigation } from "@react-navigation/native";
 import { AddCart } from "../Services/CartService";
 import AppContext from "./UseContextStorage";
-import { baseURL } from "../Constants/axios.config";
+
 
 function Card({ data, setData }) {
   const navigation = useNavigation();
@@ -65,7 +65,7 @@ function Card({ data, setData }) {
         {data?.img ? (
           <Image
             source={{
-              uri: baseURL + data?.img,
+              uri: data?.img,
             }}
             style={styles.card_Iamge}
           />

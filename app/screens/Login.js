@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   TouchableOpacity,
+  BackHandler,
 } from "react-native";
 import CustomText from "../Helpers/CustomText";
 import Button from "../Helpers/Buttons";
@@ -29,6 +30,21 @@ import * as WebBrowser from "expo-web-browser";
 //  web client "1046336497214-rn1d97dk7sg96240tsflt0dkdd008qj2.apps.googleusercontent.com"
 function Login() {
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Do nothing when the user is on the Home screen (or the desired logged-in screen)
+        // You can add logic here to prompt the user to log out, if needed.
+        return true; // Return true to prevent the default back button behavior
+      }
+    );
+
+    return () => {
+      backHandler.remove(); // Clean up the event listener when the component unmounts
+    };
+  }, []);
 
   const { setUser, expoPushToken } = useContext(AppContext);
 
@@ -62,14 +78,23 @@ function Login() {
       setLoader(true);
 
       const responseData = await userLogin(credentials);
-      const res = await update(responseData.data.user._id, {
-        deviceId: JSON.stringify(expoPushToken),
-      });
+      console.log(responseData);
       if (responseData.status === 200) {
+        const res = await update(responseData.data.user._id, {
+          deviceId: JSON.stringify(expoPushToken),
+        });
         await AsyncService.login(responseData.data.user);
         setUser(responseData.data.user);
         setLoader(false);
-
+        setCredentials({
+          ...credentials,
+          email: "",
+          password: "",
+        });
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          message: "",
+        }));
         navigation.navigate("Main");
       } else {
         setLoader(false);

@@ -6,7 +6,6 @@ import { Arrow } from "./SVGs";
 import { useNavigation } from "@react-navigation/native";
 
 import AppContext from "./UseContextStorage";
-import { baseURL } from "../Constants/axios.config";
 import { getCartItems } from "../Services/CartService";
 import { getOrderByUserId } from "../Services/OrderService";
 
@@ -70,7 +69,7 @@ function Header({
       <TouchableOpacity onPress={navigateProfile}>
         <Image
           source={{
-            uri: user && user?.img ? baseURL + user?.img : PlaceHolder,
+            uri: user && user?.img ?user?.img : PlaceHolder,
           }}
           style={styles.header_Image}
         />
