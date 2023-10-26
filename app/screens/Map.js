@@ -10,26 +10,20 @@ import {
 import Header from "../Helpers/Header";
 import MapView, { Marker, Polygon } from "react-native-maps";
 import * as Location from "expo-location";
-import {
-  PanGestureHandler,
-  ScrollView,
-  State,
-} from "react-native-gesture-handler";
+
 import AppContext from "../Helpers/UseContextStorage";
 import { Image } from "react-native";
-import {  googleApiKey, lookupsId } from "../Constants/axios.config";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import { googleApiKey, lookupsId } from "../Constants/axios.config";
+import { useNavigation } from "@react-navigation/native";
 import CustomText from "../Helpers/CustomText";
 import { TextInput } from "react-native";
 import Button from "../Helpers/Buttons";
 import { update } from "../Services/AuthService";
 import { Location as LocationMarker } from "../Helpers/SVGs";
 import AsyncService from "../Services/AsyncStorage";
-import { debounce, throttle } from "lodash";
+import { throttle } from "lodash";
 import { IsPointInPolygon } from "../Helpers/MapPolygon";
 import { getLookups } from "../Services/LookupsService";
-import GIF from "../assets/Eyesanimation.gif";
 
 function Map() {
   const mapRef = useRef(null);
@@ -46,10 +40,9 @@ function Map() {
     setUser,
     isModalVisible,
     setModalVisible,
-    mapApiStatus,
+
     setMapApiStatus,
     currentLocation,
-    setCurrentLocation,
   } = useContext(AppContext);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [credentials, setCredentials] = useState({
@@ -66,12 +59,6 @@ function Map() {
     address: "",
     message: "",
   });
-
-  // useFocusEffect(
-  //   React.useCallback(() => {
-
-  //   }, [])
-  // );
 
   useEffect(() => {
     getCurrentLocation();
@@ -369,7 +356,7 @@ function Map() {
             >
               <View style={styles.markerContainer}>
                 <ImageBackground
-                  source={{ uri:  user?.img }}
+                  source={{ uri: user?.img }}
                   style={styles.markerIcon}
                   imageStyle={styles.circleImage}
                 ></ImageBackground>

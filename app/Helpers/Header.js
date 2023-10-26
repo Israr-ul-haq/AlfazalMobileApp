@@ -69,7 +69,7 @@ function Header({
       <TouchableOpacity onPress={navigateProfile}>
         <Image
           source={{
-            uri: user && user?.img ?user?.img : PlaceHolder,
+            uri: user && user?.img ? user?.img : PlaceHolder,
           }}
           style={styles.header_Image}
         />

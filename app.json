@@ -4,10 +4,10 @@
     "slug": "BakeryApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/icon.png",
+    "icon": "./app/assets/size.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./app/assets/splash.png",
+      "image": "./app/assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -22,15 +22,29 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.israr02.BakeryApp"
+      "bundleIdentifier": "com.israr02.BakeryApp",
+      "config": {
+        "googleMapsApiKey": "AIzaSyDZ1JewDo9hZTh-b73EK7h7zks4wO0_gMM"
+      }
     },
     "android": {
+      "useNextNotificationsApi": true,
+      "googleServicesFile": "./firebase_service.json",
       "adaptiveIcon": {
-        "foregroundImage": "./app/assets/adaptive-icon.png",
+        "foregroundImage": "./app/assets/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["INTERNET"],
-      "package": "com.israr02.BakeryApp"
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDZ1JewDo9hZTh-b73EK7h7zks4wO0_gMM"
+        }
+      },
+      "statusBar": {
+        "overlay": true
+      },
+
+      "permissions": ["INTERNET", "NOTIFICATIONS"],
+      "package": "com.israr02.bakeryapp"
     },
     "web": {
       "favicon": "./app/assets/favicon.png"
@@ -41,9 +55,8 @@
         "projectId": "470bff32-608d-401c-be0b-8844ff1cbb7c"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+
+    "runtimeVersion": "49.0.0",
     "updates": {
       "url": "https://u.expo.dev/470bff32-608d-401c-be0b-8844ff1cbb7c"
     }

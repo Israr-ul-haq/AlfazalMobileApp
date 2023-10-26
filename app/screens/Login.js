@@ -55,7 +55,6 @@ function Login() {
       "1046336497214-1osfnqu8jj6ofadhsr4117nr2ln6u2ok.apps.googleusercontent.com",
     iosClientId:
       "1046336497214-e25jamfnu3sapjjl9u9fe0kr83kfjrol.apps.googleusercontent.com",
-    redirectUri: "https://auth.expo.io/@israr02/BakeryApp",
   });
 
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -349,7 +348,7 @@ function Login() {
                 Google
               </CustomText>
             </TouchableOpacity>
-            <View style={styles.icon_text}>
+            {/* <View style={styles.icon_text}>
               <Image
                 style={styles.facebookIcon}
                 source={require("../assets/Instagram.png")}
@@ -358,7 +357,7 @@ function Login() {
               <CustomText style={styles.text_iconInsta} bold={true}>
                 Instagram
               </CustomText>
-            </View>
+            </View> */}
           </View>
         </View>
 

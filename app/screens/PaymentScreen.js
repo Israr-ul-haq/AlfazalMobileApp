@@ -39,6 +39,7 @@ function PaymentScreen() {
     setMapApiStatus,
     cartData,
     setCurrentLocation,
+    setCartCount,
   } = useContext(AppContext);
 
   const [selectedAddresses, setSelectedAddresses] = useState([]);
@@ -253,6 +254,7 @@ function PaymentScreen() {
         console.log(response);
         if (response.status === 200) {
           navigation.navigate("Order");
+          setCartCount(0);
           setLoader(false);
         } else {
           setErrors((prevErrors) => ({
@@ -298,7 +300,7 @@ function PaymentScreen() {
             >
               <View style={styles.markerContainer}>
                 <ImageBackground
-                  source={{ uri:  user?.img }}
+                  source={{ uri: user?.img }}
                   style={styles.markerIcon}
                   imageStyle={styles.circleImage}
                 ></ImageBackground>
