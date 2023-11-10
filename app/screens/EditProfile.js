@@ -24,6 +24,7 @@ import { Camera } from "../Helpers/SVGs";
 import AppContext from "../Helpers/UseContextStorage";
 import { deleteImage, update, upload } from "../Services/AuthService";
 import AsyncService from "../Services/AsyncStorage";
+import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 
 function EditProfile() {
   const { user, setUser } = useContext(AppContext);
@@ -34,7 +35,7 @@ function EditProfile() {
 
   const [file, setFile] = useState("");
   const [imageUrl, setImageUrl] = useState(
-    user && user?.img ? user?.img : PlaceHolder
+    user && user?.img ? user?.img : null
   );
 
   // Function to handle image upload
@@ -197,7 +198,12 @@ function EditProfile() {
               img: user?.img,
             });
           } else {
-            console.log("Error uploading image.", res);
+            Toast.show({
+              type: ALERT_TYPE.DANGER,
+              title: "Entity too large",
+              textBody:
+                "Please upload a lighter image. The file you selected is too large. ",
+            });
           }
         } catch (err) {
           console.log("Error: ", err);
@@ -253,7 +259,7 @@ function EditProfile() {
           extraScrollHeight={100}
         >
           <View style={styles.inputContainer}>
-            {imageUrl && (
+            {imageUrl ? (
               <TouchableOpacity
                 style={styles.uploadButton}
                 onPress={handleImageUpload}
@@ -264,6 +270,20 @@ function EditProfile() {
                       source={{ uri: imageUrl }}
                       style={styles.previewImage}
                     />
+                    <View style={styles.camera}>
+                      <Camera />
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.uploadButton}
+                onPress={handleImageUpload}
+              >
+                <View style={styles.imageContains}>
+                  <View style={styles.camere_contain}>
+                    <Image source={PlaceHolder} style={styles.previewImage} />
                     <View style={styles.camera}>
                       <Camera />
                     </View>

@@ -14,7 +14,23 @@
       },
       "oauth_client": [
         {
-          "client_id": "1046336497214-e31ubr6v4demjtvds2ju40cm50oj85cu.apps.googleusercontent.com",
+          "client_id": "1046336497214-ovm6cg0u8r3l8rfsok5rooumi4tsi9rd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "alfazal.com",
+            "certificate_hash": "73c899b29388fa9c4b04dd3197c5418d48c2ec11"
+          }
+        },
+        {
+          "client_id": "1046336497214-po5b764t2drka4md3r493jjkv40grmc4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "alfazal.com",
+            "certificate_hash": "49e686222365458d804a8103bbdda5a46ab4dd8e"
+          }
+        },
+        {
+          "client_id": "1046336497214-6nu82pko008a6p2ufmjp6kr0jjq53fjs.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -27,8 +43,15 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "1046336497214-e31ubr6v4demjtvds2ju40cm50oj85cu.apps.googleusercontent.com",
+              "client_id": "1046336497214-6nu82pko008a6p2ufmjp6kr0jjq53fjs.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "1046336497214-e25jamfnu3sapjjl9u9fe0kr83kfjrol.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.israr02.BakeryApp"
+              }
             }
           ]
         }

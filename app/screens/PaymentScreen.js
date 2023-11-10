@@ -26,6 +26,7 @@ import GrandTotal from "../Helpers/GrandTotal";
 import { CreateOrder } from "../Services/OrderService";
 import { IsPointInPolygon } from "../Helpers/MapPolygon";
 import { refreshLocation } from "../Helpers/RefreshLocation";
+import PlaceHolder from "../assets/PlaceHolder.png";
 
 function PaymentScreen() {
   const {
@@ -299,11 +300,20 @@ function PaymentScreen() {
               }}
             >
               <View style={styles.markerContainer}>
-                <ImageBackground
-                  source={{ uri: user?.img }}
-                  style={styles.markerIcon}
-                  imageStyle={styles.circleImage}
-                ></ImageBackground>
+                {user.img ? (
+                  <ImageBackground
+                    source={{ uri: user?.img }}
+                    style={styles.markerIcon}
+                    imageStyle={styles.circleImage}
+                  ></ImageBackground>
+                ) : (
+                  <ImageBackground
+                    source={PlaceHolder}
+                    style={styles.markerIcon}
+                    imageStyle={styles.circleImage}
+                  ></ImageBackground>
+                )}
+
                 <View style={styles.pointer} />
               </View>
             </Marker>

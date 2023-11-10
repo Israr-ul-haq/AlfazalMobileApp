@@ -24,6 +24,9 @@ import AsyncService from "../Services/AsyncStorage";
 import AppContext from "../Helpers/UseContextStorage";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import { ScrollView } from "react-native";
+
+WebBrowser.maybeCompleteAuthSession();
 
 // andriod 1046336497214-1osfnqu8jj6ofadhsr4117nr2ln6u2ok.apps.googleusercontent.com
 /// ios 1046336497214-e25jamfnu3sapjjl9u9fe0kr83kfjrol.apps.googleusercontent.com
@@ -48,7 +51,7 @@ function Login() {
 
   const { setUser, expoPushToken } = useContext(AppContext);
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+  const [request, response, promptAsync] = Google.useAuthRequest({
     clientId:
       "1046336497214-rn1d97dk7sg96240tsflt0dkdd008qj2.apps.googleusercontent.com",
     androidClientId:
@@ -80,7 +83,7 @@ function Login() {
       console.log(responseData);
       if (responseData.status === 200) {
         const res = await update(responseData.data.user._id, {
-          deviceId: JSON.stringify(expoPushToken),
+          deviceId: expoPushToken,
         });
         await AsyncService.login(responseData.data.user);
         setUser(responseData.data.user);
@@ -111,38 +114,36 @@ function Login() {
 
   const handleGogoleLogin = async () => {
     if (response?.type === "success") {
+      setLoader(true);
       const googleUserInfo = await getUserInfo(
         response?.authentication?.accessToken
       );
-
-      // Check if the user exists in your database based on some identifier, e.g., email
-      // Replace 'checkIfUserExists' with your actual database check logic
       const userIdentifier = {
-        email: googleUserInfo?.user?.email,
+        email: googleUserInfo?.email,
       }; // Assuming you can use the email as an identifier
       const existingUser = await checkUser(userIdentifier);
 
       if (existingUser.status === 200) {
         await AsyncService.login(existingUser.data.user);
         const res = await update(existingUser.data.user._id, {
-          deviceId: JSON.stringify(expoPushToken),
+          deviceId: expoPushToken,
         });
         setUser(existingUser.data.user);
         setLoader(false);
         navigation.navigate("Main");
       } else {
         const userRejister = {
-          email: googleUserInfo.user.email,
-          name: googleUserInfo.user.name,
-          img: googleUserInfo.user.photoUrl,
+          email: googleUserInfo.email,
+          name: googleUserInfo.name,
+          img: googleUserInfo.picture,
           role: "user",
         };
         // If the user doesn't exist in your database, register them using the Google response
         const registrationResponse = await rejisterUser(userRejister);
 
         if (registrationResponse.status === 200) {
-          const res = await update(existingUser.data.user._id, {
-            deviceId: JSON.stringify(expoPushToken),
+          const res = await update(registrationResponse.data.user._id, {
+            deviceId: expoPushToken,
           });
           await AsyncService.login(registrationResponse.data.user);
           setUser(registrationResponse.data.user);
@@ -223,15 +224,32 @@ function Login() {
   const getUserInfo = async (token) => {
     if (!token) return;
 
+    setLoader(true);
     try {
-      const response = await fetch(`https://www.google.com/userinfo/v2/me`, {
-        headers: { Authorization: "Bearer " + token },
-      });
+      const response = await fetch(
+        `https://www.googleapis.com/oauth2/v3/userinfo`,
+        {
+          headers: { Authorization: "Bearer " + token },
+        }
+      );
 
-      const user = await response.json();
-      return user;
+      if (!response.ok) {
+        throw new Error("Network response was not ok: " + response.status);
+      }
+
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const user = await response.json();
+        console.log(user);
+        return user;
+      } else {
+        // Handle the case where the response is not JSON
+        console.error("Invalid response from the server");
+        setLoader(false);
+      }
     } catch (error) {
       console.error(error);
+      setLoader(false);
     }
   };
 
@@ -240,92 +258,93 @@ function Login() {
       style={styles.background}
       source={require("../assets/backgroundImage.png")}
     >
-      <View style={styles.mainTextConatiner}>
-        <CustomText style={styles.mainText} bold={true}>
-          Welcome!
-        </CustomText>
-        <View style={styles.inputContainer}>
-          <CustomText style={styles.inputText} bold={false}>
-            Email
+      <ScrollView style={styles.scrollView} scrollEventThrottle={16}>
+        <View style={styles.mainTextConatiner}>
+          <CustomText style={styles.mainText} bold={true}>
+            Welcome!
           </CustomText>
-          <TextInput
-            style={[styles.input, !!errors.email && styles.inputError]} // Apply error styles if there is an error
-            onChangeText={(text) => handleInputChange("email", text)}
-            value={credentials.email}
-            placeholder="Enter email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {!!errors.email && (
-            <CustomText style={styles.errorText} bold={false}>
-              {errors.email}
+          <View style={styles.inputContainer}>
+            <CustomText style={styles.inputText} bold={false}>
+              Email
             </CustomText>
-          )}
-        </View>
-
-        <View style={styles.inputPassContain}>
-          <CustomText style={styles.inputText} bold={false}>
-            Password
-          </CustomText>
-          <View style={styles.postion__relative}>
             <TextInput
-              style={[styles.input, !!errors.password && styles.inputError]} // Apply error styles if there is an error
-              onChangeText={(text) => handleInputChange("password", text)}
-              value={credentials.password}
-              placeholder="Enter password"
-              secureTextEntry={!showPassword}
+              style={[styles.input, !!errors.email && styles.inputError]} // Apply error styles if there is an error
+              onChangeText={(text) => handleInputChange("email", text)}
+              value={credentials.email}
+              placeholder="Enter email"
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <TouchableOpacity
-              onPress={togglePasswordVisibility}
-              style={styles.eyeIcon}
-            >
-              <Ionicons
-                name={showPassword ? "eye-off-outline" : "eye-outline"}
-                size={24}
-                color="#333"
+            {!!errors.email && (
+              <CustomText style={styles.errorText} bold={false}>
+                {errors.email}
+              </CustomText>
+            )}
+          </View>
+
+          <View style={styles.inputPassContain}>
+            <CustomText style={styles.inputText} bold={false}>
+              Password
+            </CustomText>
+            <View style={styles.postion__relative}>
+              <TextInput
+                style={[styles.input, !!errors.password && styles.inputError]} // Apply error styles if there is an error
+                onChangeText={(text) => handleInputChange("password", text)}
+                value={credentials.password}
+                placeholder="Enter password"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
               />
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={togglePasswordVisibility}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={24}
+                  color="#333"
+                />
+              </TouchableOpacity>
+            </View>
+            {!!errors.password && (
+              <CustomText style={styles.errorText} bold={false}>
+                {errors.password}
+              </CustomText>
+            )}
           </View>
-          {!!errors.password && (
-            <CustomText style={styles.errorText} bold={false}>
-              {errors.password}
-            </CustomText>
-          )}
-        </View>
 
-        <View style={styles.ButtonLoginContains}>
-          {!!errors.message && (
-            <CustomText style={styles.resErrortext} bold={false}>
-              {errors.message}
-            </CustomText>
-          )}
-          <Button
-            onPressOk={handleLogin}
-            title="Login"
-            isButtonFirst={true}
-            isLoading={loader}
-          />
-        </View>
-        <TouchableOpacity onPress={redirectForgot}>
-          <CustomText style={styles.forgotPassText} bold={false}>
-            Forgot password
-          </CustomText>
-        </TouchableOpacity>
-        <View style={styles.align_center}>
-          <View style={styles.socialBorder}></View>
-          <View style={styles.socialTextContains}>
-            <CustomText style={styles.socialLogin} bold={false}>
-              Or Login using
-            </CustomText>
+          <View style={styles.ButtonLoginContains}>
+            {!!errors.message && (
+              <CustomText style={styles.resErrortext} bold={false}>
+                {errors.message}
+              </CustomText>
+            )}
+            <Button
+              onPressOk={handleLogin}
+              title="Login"
+              isButtonFirst={true}
+              isLoading={loader}
+            />
           </View>
-        </View>
+          <TouchableOpacity onPress={redirectForgot}>
+            <CustomText style={styles.forgotPassText} bold={false}>
+              Forgot password
+            </CustomText>
+          </TouchableOpacity>
+          <View style={styles.align_center}>
+            <View style={styles.socialBorder}></View>
+            <View style={styles.socialTextContains}>
+              <CustomText style={styles.socialLogin} bold={false}>
+                Or Login using
+              </CustomText>
+            </View>
+          </View>
 
-        <View style={styles.socialIconContains}>
-          <View style={styles.iconWrapper}>
-            <View style={styles.icon_text}>
+          <View style={styles.socialIconContains}>
+            <View style={styles.iconWrapper}>
+              {/*  <View style={styles.icon_text}>
               <Image
                 style={styles.facebookIcon}
                 source={require("../assets/Facebook.png")}
@@ -334,21 +353,22 @@ function Login() {
               <CustomText style={styles.text_icon} bold={true}>
                 Facebook
               </CustomText>
-            </View>
-            <TouchableOpacity
-              style={styles.icon_text}
-              onPress={() => promptAsync()}
-            >
-              <Image
-                style={styles.facebookIcon}
-                source={require("../assets/Google.png")}
-                resizeMode="contain"
-              />
-              <CustomText style={styles.text_iconGoogle} bold={true}>
-                Google
-              </CustomText>
-            </TouchableOpacity>
-            {/* <View style={styles.icon_text}>
+            </View>  */}
+              <TouchableOpacity
+                style={styles.icon_text}
+                onPress={() => promptAsync()}
+                disabled={loader}
+              >
+                <Image
+                  style={styles.facebookIcon}
+                  source={require("../assets/Google.png")}
+                  resizeMode="contain"
+                />
+                <CustomText style={styles.text_iconGoogle} bold={true}>
+                  Google
+                </CustomText>
+              </TouchableOpacity>
+              {/* <View style={styles.icon_text}>
               <Image
                 style={styles.facebookIcon}
                 source={require("../assets/Instagram.png")}
@@ -358,21 +378,22 @@ function Login() {
                 Instagram
               </CustomText>
             </View> */}
+            </View>
+          </View>
+
+          <View style={styles.signUp}>
+            <View style={styles.iconWrapper}>
+              <CustomText style={styles.forgot_pass} bold={false}>
+                Don’t have an account?
+              </CustomText>
+
+              <TouchableOpacity onPress={redirect}>
+                <CustomText style={styles.signUpLink}> SignUp</CustomText>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        <View style={styles.signUp}>
-          <View style={styles.iconWrapper}>
-            <CustomText style={styles.forgot_pass} bold={false}>
-              Don’t have an account?
-            </CustomText>
-
-            <TouchableOpacity onPress={redirect}>
-              <CustomText style={styles.signUpLink}> SignUp</CustomText>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      </ScrollView>
     </ImageBackground>
   );
 }
@@ -380,9 +401,12 @@ function Login() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
+
     backgroundColor: "white",
+  },
+
+  scrollView: {
+    flexGrow: 1,
   },
 
   postion__relative: {
@@ -390,10 +414,11 @@ const styles = StyleSheet.create({
   },
 
   mainTextConatiner: {
-    position: "absolute",
-    top: 100,
+    // position: "absolute",
+    // top: 100,
     width: "100%",
     paddingHorizontal: 30,
+    paddingTop: 100,
   },
   inputContainer: {
     top: 50,

@@ -6,6 +6,8 @@ import {
   TextInput,
   Text,
   BackHandler,
+  Button,
+  StatusBar,
 } from "react-native";
 import Header from "../Helpers/Header";
 import CustomText from "../Helpers/CustomText";
@@ -96,7 +98,7 @@ function Home() {
       }
 
       if (categoryResponse.status === 200) {
-        const allCategory = { _id: "1", Name: "All" }; // Creating a new category object
+        const allCategory = { id: "1", Name: "All" }; // Creating a new category object
         const categoriesWithAll = [allCategory, ...categoryResponse.data.data]; // Adding the new category to the list
 
         setCategoryData(categoriesWithAll);
@@ -147,13 +149,17 @@ function Home() {
   const CardMemo = memo(CardTag);
 
   const handleCategoryChange = async (category) => {
+    console.log(category);
     setSearchLoader(true);
     try {
       const response = await get(
         1,
         20,
-        category._id === "1" ? "" : category._id
+        category.id === "1" ? "" : category._id,
+        user && user?._id
       );
+
+      console.log(response);
       if (response.status === 200) {
         setData(response.data.data);
         setActiveCategory(category);
@@ -176,31 +182,31 @@ function Home() {
       <Header text={"Home"} />
 
       <View style={styles.main_contains}>
-        <TouchableOpacity onPress={toggleDropdown}>
-          <View style={styles.text_contain}>
-            <View style={styles.category_slider}>
-              <CustomText style={styles.category_main_text} bold={true}>
-                Categories
-              </CustomText>
-            </View>
-            <Animated.View
-              style={[
-                styles.arrowContainer,
-                { transform: [{ rotate: rotateArrow }] },
-              ]}
-            >
-              <ArrowMenu />
-            </Animated.View>
+        {/* <TouchableOpacity onPress={toggleDropdown}> */}
+        <View style={styles.text_contain}>
+          <View style={styles.category_slider}>
+            <CustomText style={styles.category_main_text} bold={true}>
+              Categories
+            </CustomText>
           </View>
-          {showDropdown && (
-            <CategorySlider
-              categories={categoryData}
-              activeCategory={activeCategory}
-              setActiveCategory={setActiveCategory}
-              handleCategoryChange={handleCategoryChange}
-            />
-          )}
-        </TouchableOpacity>
+          {/* <Animated.View
+            style={[
+              styles.arrowContainer,
+              { transform: [{ rotate: rotateArrow }] },
+            ]}
+          >
+            <ArrowMenu />
+          </Animated.View> */}
+        </View>
+        {/* {showDropdown && ( */}
+        <CategorySlider
+          categories={categoryData}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
+          handleCategoryChange={handleCategoryChange}
+        />
+        {/* )} */}
+        {/* </TouchableOpacity> */}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -229,7 +235,7 @@ function Home() {
           <View style={styles.card_container}>
             {searchLoader ? (
               <SkeletonPlaceholder />
-            ) : data.length === 0 ? (
+            ) : data?.length === 0 ? (
               <>
                 <Text style={styles.buttonText}>No product found</Text>
               </>

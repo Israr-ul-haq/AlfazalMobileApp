@@ -85,12 +85,16 @@ function Profile() {
         <View style={styles.container}>
           <View style={styles.flex_row}>
             <View style={styles.imageContains}>
-              <Image
-                source={{
-                  uri: user && user?.img ? user?.img : PlaceHolder,
-                }}
-                style={styles.previewImage}
-              />
+              {user?.img ? (
+                <Image
+                  source={{
+                    uri: user && user?.img ? user?.img : PlaceHolder,
+                  }}
+                  style={styles.previewImage}
+                />
+              ) : (
+                <Image source={PlaceHolder} style={styles.previewImage} />
+              )}
             </View>
             <View style={styles.textContains}>
               <CustomText style={styles.text_size} bold={true}>

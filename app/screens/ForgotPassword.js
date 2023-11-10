@@ -11,6 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import OuterHeader from "../Helpers/OuterHeader";
 
 function ForgotPassword() {
   const navigation = useNavigation();
@@ -225,6 +226,7 @@ function ForgotPassword() {
       style={styles.background}
       source={require("../assets/backgroundImage.png")}
     >
+      <OuterHeader text={"Login"} navigateUrl={"Login"} />
       <KeyboardAwareScrollView
         ref={scrollViewRef}
         contentContainerStyle={styles.scrollContainer}
@@ -232,10 +234,7 @@ function ForgotPassword() {
       >
         <View style={styles.mainTextConatiner}>
           <View style={styles.logoContains}>
-            <Image
-              style={styles.logo}
-              source={require("../assets/logo-placeholder.png")}
-            />
+            <Image style={styles.logo} source={require("../assets/logo.png")} />
           </View>
 
           {isOtpInput && (

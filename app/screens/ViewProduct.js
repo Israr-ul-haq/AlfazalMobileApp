@@ -17,7 +17,6 @@ import { getById } from "../Services/ProdunctsService";
 import { AddCart } from "../Services/CartService";
 import AppContext from "../Helpers/UseContextStorage";
 
-
 function ViewProduct() {
   const route = useRoute();
   const { data } = route.params;
@@ -27,7 +26,7 @@ function ViewProduct() {
   const { setData, user, setCartCount } = useContext(AppContext);
 
   useEffect(() => {
-    setCount(data.count === 0 ? 1 : data.count);
+    setCount(data?.count === 0 ? 1 : data?.count);
   }, []);
 
   const addTocart = async (status) => {

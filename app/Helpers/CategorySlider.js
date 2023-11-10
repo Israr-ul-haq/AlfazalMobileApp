@@ -20,19 +20,20 @@ const CategorySlider = ({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {categories.map((category) => (
+      {categories?.map((category, index) => (
         <TouchableOpacity
-          key={category._id} // Assuming each category object has a unique identifier like '_id'
+          key={`card_${index}`} // Assuming each category object has a unique identifier like '_id'
           style={[
             styles.category,
-            activeCategory._id === category._id && styles.activeCategory,
+            activeCategory?._id === category?._id && styles.activeCategory,
           ]}
           onPress={() => handleCategoryChange(category)}
         >
           <CustomText
             style={[
               styles.categoryText,
-              activeCategory._id === category._id && styles.activeCategoryText,
+              activeCategory?._id === category?._id &&
+                styles.activeCategoryText,
             ]}
           >
             {category.Name}

@@ -4,10 +4,10 @@
     "slug": "BakeryApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/size.png",
+    "icon": "./app/assets/polotno.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./app/assets/logo.png",
+      "image": "./app/assets/startScreenBanner.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -28,10 +28,8 @@
       }
     },
     "android": {
-      "useNextNotificationsApi": true,
-      "googleServicesFile": "./firebase_service.json",
       "adaptiveIcon": {
-        "foregroundImage": "./app/assets/logo.png",
+        "foregroundImage": "./app/assets/polotno.png",
         "backgroundColor": "#ffffff"
       },
       "config": {
@@ -39,12 +37,9 @@
           "apiKey": "AIzaSyDZ1JewDo9hZTh-b73EK7h7zks4wO0_gMM"
         }
       },
-      "statusBar": {
-        "overlay": true
-      },
-
-      "permissions": ["INTERNET", "NOTIFICATIONS"],
-      "package": "com.israr02.bakeryapp"
+      "googleServicesFile": "./google-services.json",
+      "permissions": ["INTERNET"],
+      "package": "alfazal.com"
     },
     "web": {
       "favicon": "./app/assets/favicon.png"

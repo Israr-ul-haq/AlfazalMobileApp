@@ -67,12 +67,16 @@ function Header({
         {text}
       </CustomText>
       <TouchableOpacity onPress={navigateProfile}>
-        <Image
-          source={{
-            uri: user && user?.img ? user?.img : PlaceHolder,
-          }}
-          style={styles.header_Image}
-        />
+        {user?.img ? (
+          <Image
+            source={{
+              uri: user && user?.img ? user?.img : PlaceHolder,
+            }}
+            style={styles.header_Image}
+          />
+        ) : (
+          <Image source={PlaceHolder} style={styles.header_Image} />
+        )}
       </TouchableOpacity>
     </View>
   );

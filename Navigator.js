@@ -5,7 +5,7 @@ import Login from "./app/screens/Login";
 import SignUp from "./app/screens/SignUp";
 import BottomBarMenu from "./app/Helpers/BottomBar";
 import ViewProduct from "./app/screens/ViewProduct";
-import Cart from "./app/screens/Cart";
+
 import PaymentScreen from "./app/screens/PaymentScreen";
 import OrderScreen from "./app/screens/OrderScreen";
 import History from "./app/screens/History";
@@ -15,16 +15,18 @@ import AsyncService from "./app/Services/AsyncStorage";
 import { useEffect, useState, useContext, useRef } from "react";
 import AppContext from "./app/Helpers/UseContextStorage";
 import Map from "./app/screens/Map";
-import * as Device from "expo-device";
+
 import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
-import { Alert, BackHandler, Platform } from "react-native";
+
+import { Alert, BackHandler, Platform, StatusBar } from "react-native";
 import ReviewModal from "./app/Helpers/ReviewModal";
 import * as Location from "expo-location";
 import * as Linking from "expo-linking";
 import { refreshLocation } from "./app/Helpers/RefreshLocation";
-
-// import firebase from "./firebase"; // Import the firebase configuration
+import messaging from "@react-native-firebase/messaging";
+import { update } from "./app/Services/AuthService";
+import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { useNavigation } from "@react-navigation/native";
 
 const Stack = createStackNavigator();
 
@@ -36,40 +38,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-async function registerForPushNotificationsAsync() {
-  let token;
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== "granted") {
-      alert("Failed to get push token for push notification!");
-      return;
-    }
-    token = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig.extra.eas.projectId,
-    });
-    console.log(token);
-  } else {
-    alert("Must use physical device for Push Notifications");
-  }
-
-  if (Platform.OS === "android") {
-    Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
-  }
-
-  return token;
-}
-
 const AppNavigator = () => {
   const {
     isWelcomeScreen,
@@ -80,10 +48,9 @@ const AppNavigator = () => {
     setOrderData,
     user,
     setCurrentLocation,
+    setIsWelcomeScreen,
   } = useContext(AppContext);
-
-  const notificationListener = useRef();
-  const responseListener = useRef();
+  const navigation = useNavigation();
 
   const [isModalVisible, setModalVisible] = useState(false);
 
@@ -104,7 +71,12 @@ const AppNavigator = () => {
       if (fetchedUser.orderReviewStatus) {
         openModal();
       }
+
+      navigation.navigate("Main");
+    } else {
+      navigation.navigate("GettingStarted");
     }
+    setIsWelcomeScreen(true);
   };
 
   const checkLocation = async () => {
@@ -152,56 +124,120 @@ const AppNavigator = () => {
     await AsyncService.updateUser(updatedUser);
   };
 
-  useEffect(() => {
-    registerForPushNotificationsAsync().then((token) =>
-      setExpoPushToken(token)
-    );
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        console.log("Received notification:", notification);
-        const notificationData = notification.request.content.data;
-        console.log("Notification data:", notificationData);
-        if (notificationData.orderData[0].orderStatus === "complete") {
-          setOrderData();
-          openModal();
-          setUser((prevUser) => {
-            const updatedUser = {
-              ...prevUser,
-              orderReviewStatus: true,
-              latestOrderId: notificationData.orderData[0]._id,
-            };
-            updateUserAndStorage(updatedUser); // Call the async function
-            return updatedUser;
-          });
-        } else {
-          setOrderData(notificationData.orderData[0]);
+    if (enabled) {
+      console.log("Authorization status:", authStatus);
+    }
+  }
+
+  useEffect(() => {
+    if (requestUserPermission()) {
+      messaging()
+        .getToken()
+        .then(async (token) => {
+          setExpoPushToken(token);
+
+          const loggedIn = await AsyncService.isLoggedIn();
+
+          if (loggedIn && user._id) {
+            const res = await update(user?._id, {
+              deviceId: token,
+            });
+
+            console.log(token, "api update token");
+          }
+        });
+    } else {
+      console.log("Failed token status");
+    }
+
+    messaging().onNotificationOpenedApp(async (remoteMessage) => {
+      console.log(
+        "Notification caused app to open from background state:",
+        remoteMessage.notification
+      );
+    });
+
+    messaging()
+      .getInitialNotification()
+      .then(async (remoteMessage) => {
+        if (remoteMessage) {
+          console.log(
+            "Notification caused app to open from quit state:",
+            remoteMessage.notification
+          );
         }
       });
 
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response, "token");
+    messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+      console.log("Message handled in the background!", remoteMessage);
+      const notificationData = JSON.parse(remoteMessage.data.orderData);
+      console.log("Notification data:", notificationData);
+      if (notificationData.orderStatus === "complete") {
+        setOrderData();
+        openModal();
+        setUser((prevUser) => {
+          const updatedUser = {
+            ...prevUser,
+            orderReviewStatus: true,
+            latestOrderId: notificationData._id,
+          };
+          updateUserAndStorage(updatedUser); // Call the async function
+          return updatedUser;
+        });
+      } else {
+        setOrderData(notificationData);
+      }
+    });
+
+    const unsubscribe = messaging().onMessage(async (remoteMessage) => {
+      // Alert.alert("A new FCM message arrived!", JSON.stringify(remoteMessage));
+      const notificationData = JSON.parse(remoteMessage.data.orderData);
+      console.log("Notification data:", notificationData);
+      if (notificationData.orderStatus === "complete") {
+        setOrderData();
+        openModal();
+        setUser((prevUser) => {
+          const updatedUser = {
+            ...prevUser,
+            orderReviewStatus: true,
+            latestOrderId: notificationData._id,
+          };
+          updateUserAndStorage(updatedUser); // Call the async function
+          return updatedUser;
+        });
+      } else {
+        setOrderData(notificationData);
+      }
+
+      Toast.show({
+        type: ALERT_TYPE.SUCCESS,
+        title: remoteMessage.notification.title,
+        textBody: remoteMessage.notification.body,
       });
 
-    return () => {
-      Notifications.removeNotificationSubscription(
-        notificationListener.current
-      );
-      Notifications.removeNotificationSubscription(responseListener.current);
-    };
+      console.log(remoteMessage);
+    });
+
+    return unsubscribe;
   }, []);
 
   return (
     <>
+      <StatusBar translucent backgroundColor="transparent" />
       <Stack.Navigator>
-        {!isWelcomeScreen && (
+        {/* {!isWelcomeScreen && (
           <Stack.Screen
             name="Welcome"
             component={WelcomeScreen}
             options={{ headerShown: false }}
           />
-        )}
+        )} */}
 
         {!isLoggedIn && (
           <Stack.Screen
@@ -221,6 +257,15 @@ const AppNavigator = () => {
             }}
           />
         )}
+
+        <Stack.Screen
+          name="Main"
+          options={{
+            header: () => null, // Render a custom empty header component
+          }}
+        >
+          {() => <BottomBarMenu />}
+        </Stack.Screen>
 
         <Stack.Screen
           name="ViewProduct"
@@ -273,14 +318,6 @@ const AppNavigator = () => {
             header: () => null, // Render a custom empty header component
           }}
         />
-        <Stack.Screen
-          name="Main"
-          options={{
-            header: () => null, // Render a custom empty header component
-          }}
-        >
-          {() => <BottomBarMenu />}
-        </Stack.Screen>
       </Stack.Navigator>
 
       <ReviewModal

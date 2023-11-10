@@ -22,6 +22,8 @@ import { Platform } from "react-native";
 import { deleteImage, rejisterUser, upload } from "../Services/AuthService";
 import { Ionicons } from "@expo/vector-icons";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import { Arrow } from "../Helpers/SVGs";
+import OuterHeader from "../Helpers/OuterHeader";
 
 function SignUp() {
   const scrollViewRef = useRef(null);
@@ -312,14 +314,13 @@ function SignUp() {
         style={styles.background}
         source={require("../assets/backgroundImage.png")}
       >
+        <OuterHeader text="SignUp" navigateUrl={"Login"} />
+
         <KeyboardAwareScrollView
           ref={scrollViewRef}
           contentContainerStyle={styles.scrollContainer}
           extraScrollHeight={100}
         >
-          <CustomText style={styles.mainText} bold={true}>
-            SignUp
-          </CustomText>
           <View style={styles.inputContainer}>
             <CustomText style={styles.inputText} bold={false}>
               Full Name
@@ -530,7 +531,7 @@ function SignUp() {
             )}
             <Button
               onPressOk={handleSubmit}
-              title="Update"
+              title="Save"
               isButtonFirst={true}
               isLoading={loader}
             />
@@ -550,10 +551,13 @@ const styles = StyleSheet.create({
   },
   signUpButton: {
     paddingTop: 50,
+    paddingBottom: 150,
   },
   mainText: {
     fontSize: 33,
+    color: "white",
   },
+
   inputContainer: {
     paddingTop: 30,
   },
@@ -568,6 +572,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 50,
   },
+
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 20,
